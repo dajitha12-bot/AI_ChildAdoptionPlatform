@@ -655,3 +655,39 @@ def api_get_agency_detail(agency_id):
         'last_verified': agency.get('last_verified'),
         'freshness': get_freshness_status(agency.get('last_verified'))
     })
+
+
+@adopter_bp.route('/notifications', methods=['GET', 'POST'])
+@adopter_required
+def notifications_page():
+    """Adopter Notifications Page (4th Adopter Main Page)."""
+    user = get_current_user()
+    user_id = str(user['_id'])
+
+    if request.method == 'POST':
+        notif_id = request.form.get('notif_id')
+        if request.form.get('action') == 'mark_all':
+            from services.notification_service import mark_all_read
+            mark_all_read(user_id)
+            flash('All notifications marked as read.', 'success')
+        elif notif_id:
+            from services.notification_service import mark_notification_read
+            mark_notification_read(notif_id)
+            flash('Notification marked as read.', 'success')
+        return redirect(url_for('adopter.notifications_page'))
+
+    filter_type = request.args.get('filter', 'all')
+    all_notifications = get_user_notifications(user_id, limit=50)
+    if filter_type == 'unread':
+        notifications_list = [n for n in all_notifications if not n.get('is_read')]
+    else:
+        notifications_list = all_notifications
+
+    unread_count = get_unread_count(user_id)
+    return render_template(
+        'adopter/notifications.html',
+        user=user,
+        notifications=notifications_list,
+        unread_count=unread_count,
+        filter_type=filter_type
+    )

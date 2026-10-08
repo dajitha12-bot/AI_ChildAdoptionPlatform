@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}System Notifications – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}System Notifications{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header & Filter Tabs -->
+        <div class="card-custom mb-3 p-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-triangle-exclamation text-pink me-2"></i>Platform & Security Alerts</h5>
+                    <div class="text-muted small">System health, Trust verification requests, and delivery failures</div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ url_for('admin.notifications_page', filter='all') }}" class="btn btn-sm {% if filter_type != 'unread' %}btn-pink{% else %}btn-outline-pink{% endif %}">All Notifications</a>
+                    <a href="{{ url_for('admin.notifications_page', filter='unread') }}" class="btn btn-sm {% if filter_type == 'unread' %}btn-pink{% else %}btn-outline-pink{% endif %}">Unread ({{ unread_count }})</a>
+
+                    {% if unread_count > 0 %}
+                    <form action="{{ url_for('admin.notifications_page') }}" method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="mark_all">
+                        <button type="submit" class="btn btn-sm btn-light border">
+                            <i class="fa-solid fa-check-double me-1"></i> Mark All as Read
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications List -->
+        {% if notifications %}
+            <div class="d-flex flex-column gap-2 mb-4">
+                {% for n in notifications %}
+                    <div class="card-custom p-3 border {% if not n.is_read %}border-pink-accent bg-very-light-pink{% else %}bg-white{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="card-icon {% if not n.is_read %}bg-pink text-white{% else %}bg-light text-muted{% endif %}" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                                    <i class="fa-solid {% if n.type == 'email_failure' %}fa-envelope-circle-check{% elif n.type == 'trust_verification' %}fa-building-circle-check{% else %}fa-shield-halved{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">{{ n.title or 'System Alert' }}</h6>
+                                        <span class="badge badge-pink" style="font-size: 0.65rem;">{{ n.type|replace('_', ' ')|capitalize }}</span>
+                                        {% if not n.is_read %}
+                                            <span class="badge bg-danger" style="font-size: 0.6rem;">NEW</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-dark mt-1" style="font-size: 0.9rem;">{{ n.message }}</div>
+                                    {% if n.related_id %}
+                                        <div class="text-muted small mt-1" style="font-size: 0.75rem;">Related ID: <strong>{{ n.related_id }}</strong></div>
+                                    {% endif %}
+                                    <div class="text-muted small mt-1" style="font-size: 0.75rem;">{{ n.created_at[:16].replace('T', ' ') if n.created_at else '' }}</div>
+                                </div>
+                            </div>
+
+                            {% if not n.is_read %}
+                            <form action="{{ url_for('admin.notifications_page') }}" method="POST">
+                                <input type="hidden" name="notif_id" value="{{ n._id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-pink py-1 px-2" style="font-size: 0.75rem;">
+                                    <i class="fa-solid fa-check"></i> Mark Read
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card-custom p-5 text-center text-muted">
+                <i class="fa-regular fa-bell-slash fa-2x mb-2 text-pink"></i>
+                <h6>No system notifications found</h6>
+                <p class="small mb-0">You have no {{ filter_type }} admin notifications at this time.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -217,3 +217,27 @@ def find_trust_related_emails(user_email):
         'status': log.get('status', ''),
         'date': log.get('sent_at', '')
     } for log in logs]
+
+
+def send_matching_completed_email(applicant_email, application_id, agency_name, user_id=None):
+    """Sends official child-family matching completed email (Requirement 20 & 21 format)."""
+    subject = f"Child-Family Matching Completed – {application_id}"
+    now_str = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    body = f"""Dear Applicant,
+
+Your child-family matching process with {agency_name} has been successfully completed and authorized by the Trust Board.
+
+Application ID:
+{application_id}
+
+Agency:
+{agency_name}
+
+Completion Date:
+{now_str}
+
+Please log in to your dashboard to view the authorized information and next administrative steps.
+
+Thank you,
+Smart Child Adoption Support Platform"""
+    return send_smtp_email(applicant_email, subject, body, email_type='MATCHING_COMPLETED', user_id=user_id)

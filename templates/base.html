@@ -37,31 +37,28 @@
                 <a href="{{ url_for('adopter.dashboard') }}" class="sidebar-link {% if request.endpoint == 'adopter.dashboard' %}active{% endif %}">
                     <i class="fa-solid fa-house"></i> <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('adopter.profile') }}" class="sidebar-link {% if request.endpoint == 'adopter.profile' %}active{% endif %}">
-                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
-                </a>
                 <a href="{{ url_for('adopter.verified_trusts') }}" class="sidebar-link {% if request.endpoint == 'adopter.verified_trusts' %}active{% endif %}">
-                    <i class="fa-solid fa-building-shield"></i> <span>Verified Agencies</span>
-                </a>
-                <a href="{{ url_for('adopter.journey') }}" class="sidebar-link {% if request.endpoint == 'adopter.journey' %}active{% endif %}">
-                    <i class="fa-solid fa-chart-line"></i> <span>My Adoption Journey</span>
+                    <i class="fa-solid fa-building-shield"></i> <span>Trust & Application</span>
                 </a>
                 <a href="{{ url_for('adopter.ai_assistant') }}" class="sidebar-link {% if request.endpoint == 'adopter.ai_assistant' %}active{% endif %}">
-                    <i class="fa-solid fa-robot"></i> <span>AI Adoption Assistant</span>
+                    <i class="fa-solid fa-robot"></i> <span>AI Assistant</span>
+                </a>
+                <a href="{{ url_for('adopter.notifications_page') }}" class="sidebar-link {% if request.endpoint == 'adopter.notifications_page' %}active{% endif %}">
+                    <i class="fa-regular fa-bell"></i> <span>Notifications</span>
                 </a>
 
             {% elif current_user.role == 'trust' %}
                 <a href="{{ url_for('trust.dashboard') }}" class="sidebar-link {% if request.endpoint == 'trust.dashboard' %}active{% endif %}">
                     <i class="fa-solid fa-house"></i> <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('trust.profile') }}" class="sidebar-link {% if request.endpoint == 'trust.profile' %}active{% endif %}">
-                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
-                </a>
-                <a href="{{ url_for('trust.requests_list') }}" class="sidebar-link {% if request.endpoint == 'trust.requests_list' %}active{% endif %}">
-                    <i class="fa-solid fa-clipboard-list"></i> <span>Adopter Requests</span>
-                </a>
                 <a href="{{ url_for('trust.applications') }}" class="sidebar-link {% if request.endpoint == 'trust.applications' %}active{% endif %}">
-                    <i class="fa-solid fa-bars-progress"></i> <span>Application Management</span>
+                    <i class="fa-solid fa-clipboard-list"></i> <span>Applications & Matching</span>
+                </a>
+                <a href="{{ url_for('trust.profile') }}" class="sidebar-link {% if request.endpoint == 'trust.profile' %}active{% endif %}">
+                    <i class="fa-solid fa-building"></i> <span>Trust Profile</span>
+                </a>
+                <a href="{{ url_for('trust.notifications_page') }}" class="sidebar-link {% if request.endpoint == 'trust.notifications_page' %}active{% endif %}">
+                    <i class="fa-regular fa-bell"></i> <span>Notifications</span>
                 </a>
 
             {% elif current_user.role == 'admin' %}
@@ -69,16 +66,13 @@
                     <i class="fa-solid fa-house"></i> <span>Dashboard</span>
                 </a>
                 <a href="{{ url_for('admin.trust_data_management') }}" class="sidebar-link {% if request.endpoint == 'admin.trust_data_management' %}active{% endif %}">
-                    <i class="fa-solid fa-building-circle-check"></i> <span>Trust Data Management</span>
-                </a>
-                <a href="{{ url_for('admin.profile') }}" class="sidebar-link {% if request.endpoint == 'admin.profile' %}active{% endif %}">
-                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
-                </a>
-                <a href="{{ url_for('admin.trust_verification') }}" class="sidebar-link {% if request.endpoint == 'admin.trust_verification' %}active{% endif %}">
-                    <i class="fa-solid fa-shield-check"></i> <span>Trust Moderation</span>
+                    <i class="fa-solid fa-building-circle-check"></i> <span>Trust Management</span>
                 </a>
                 <a href="{{ url_for('admin.monitoring') }}" class="sidebar-link {% if request.endpoint == 'admin.monitoring' %}active{% endif %}">
                     <i class="fa-solid fa-desktop"></i> <span>Platform Monitoring</span>
+                </a>
+                <a href="{{ url_for('admin.notifications_page') }}" class="sidebar-link {% if request.endpoint == 'admin.notifications_page' %}active{% endif %}">
+                    <i class="fa-regular fa-bell"></i> <span>Notifications</span>
                 </a>
             {% endif %}
         </nav>

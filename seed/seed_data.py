@@ -165,13 +165,42 @@ def seed():
         'is_read': False,
         'created_at': now_iso
     })
-    db.notifications.insert_one({
-        'user_id': adopter_id_str,
-        'message': 'Adoption request ADP1024 submitted to ABC Adoption Support Trust. Current status: Trust Review.',
-        'type': 'request_sent',
-        'is_read': False,
-        'created_at': now_iso
-    })
+    # 6. Sample Child Profiles for Child-Family Matching
+    db.child_profiles.delete_many({})
+    db.child_matches.delete_many({})
+
+    if abc_trust_id:
+        sample_children = [
+            {
+                'child_id': 'CH-101',
+                'trust_id': abc_trust_id,
+                'child_name': 'Child Profile A',
+                'age_range': '0-2 years',
+                'gender': 'Female',
+                'language': 'Tamil',
+                'location_region': 'Madurai, Tamil Nadu',
+                'authorized_support_category': 'General Adoption Support',
+                'available_for_matching': True,
+                'status': 'AVAILABLE',
+                'created_at': now_iso,
+                'updated_at': now_iso
+            },
+            {
+                'child_id': 'CH-102',
+                'trust_id': abc_trust_id,
+                'child_name': 'Child Profile B',
+                'age_range': '2-4 years',
+                'gender': 'Male',
+                'language': 'Tamil',
+                'location_region': 'Madurai, Tamil Nadu',
+                'authorized_support_category': 'Special Care Support',
+                'available_for_matching': True,
+                'status': 'AVAILABLE',
+                'created_at': now_iso,
+                'updated_at': now_iso
+            }
+        ]
+        db.child_profiles.insert_many(sample_children)
 
     print("Database seeding completed successfully!")
 
