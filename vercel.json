@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*.py": {
+      "includeFiles": "seed/**, templates/**, static/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
