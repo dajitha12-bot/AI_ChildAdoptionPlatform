@@ -9,6 +9,11 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    verified_trust_accounts = list(db.trusts.find({'verified': True}))
+    for t in verified_trust_accounts:
+        t['_id'] = str(t['_id'])
+    verified_trust_accounts.sort(key=lambda x: x.get('trust_name', ''))
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
@@ -16,17 +21,17 @@ def login():
 
         if not email or not password:
             flash('Please fill in both email and password.', 'danger')
-            return render_template('auth/login.html', selected_role=selected_role, email=email)
+            return render_template('auth/login.html', selected_role=selected_role, email=email, verified_trust_accounts=verified_trust_accounts)
 
         user = db.users.find_one({'email': email})
         if not user or not verify_password(user.get('password_hash', ''), password):
             flash('Invalid email or password.', 'danger')
-            return render_template('auth/login.html', selected_role=selected_role, email=email)
+            return render_template('auth/login.html', selected_role=selected_role, email=email, verified_trust_accounts=verified_trust_accounts)
 
         # Enforce role match if specified
         if selected_role and user.get('role') != selected_role:
             flash(f'Account role mismatch. This user is registered as "{user.get("role")}".', 'warning')
-            return render_template('auth/login.html', selected_role=selected_role, email=email)
+            return render_template('auth/login.html', selected_role=selected_role, email=email, verified_trust_accounts=verified_trust_accounts)
 
         login_user_session(user)
         flash(f'Welcome back, {user.get("name")}!', 'success')
@@ -40,7 +45,7 @@ def login():
             return redirect(url_for('admin.dashboard'))
 
     selected_role = request.args.get('role', 'adopter')
-    return render_template('auth/login.html', selected_role=selected_role)
+    return render_template('auth/login.html', selected_role=selected_role, verified_trust_accounts=verified_trust_accounts)
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

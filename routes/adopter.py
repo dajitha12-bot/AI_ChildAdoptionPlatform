@@ -218,6 +218,13 @@ def verified_trusts():
             except Exception:
                 applied_trust = db.trusts.find_one({'_id': application['trust_id']})
 
+    target_trust = None
+    if apply_trust_id:
+        try:
+            target_trust = db.trusts.find_one({'_id': ObjectId(apply_trust_id)})
+        except Exception:
+            target_trust = db.trusts.find_one({'_id': apply_trust_id})
+
     selected_trust_id = application.get('trust_id') if application else None
 
     notifications = get_user_notifications(user_id, limit=5)
@@ -231,6 +238,7 @@ def verified_trusts():
         application=application,
         journey=journey,
         applied_trust=applied_trust,
+        target_trust=target_trust,
         available_states=available_states,
         available_districts=available_districts,
         available_cities=available_cities,
