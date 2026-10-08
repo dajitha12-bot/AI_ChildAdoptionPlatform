@@ -33,12 +33,17 @@ def init_db(app=None):
         return _db
 
     try:
-        # Try real MongoDB Atlas connection with certifi CA bundle for Windows SSL compatibility
-        client = MongoClient(
-            Config.MONGO_URI,
-            serverSelectionTimeoutMS=3000,
-            tlsCAFile=certifi.where()
-        )
+        # Try real MongoDB Atlas connection with certifi CA bundle for SSL compatibility
+        client_kwargs = {
+            'serverSelectionTimeoutMS': 3000
+        }
+        try:
+            import certifi
+            client_kwargs['tlsCAFile'] = certifi.where()
+        except Exception as ssl_err:
+            logger.warning(f"Certifi CA bundle note: {ssl_err}")
+
+        client = MongoClient(Config.MONGO_URI, **client_kwargs)
         client.admin.command('ping')
         _client = client
         _db = client[Config.MONGO_DB_NAME]
