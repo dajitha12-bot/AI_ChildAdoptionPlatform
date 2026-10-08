@@ -13,8 +13,14 @@ from routes.ai import ai_bp
 from routes.notifications import notif_bp
 from routes.api_agencies import api_agencies_bp
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(BASE_DIR, 'templates'),
+        static_folder=os.path.join(BASE_DIR, 'static')
+    )
     app.config.from_object(Config)
 
     # Initialize Database
