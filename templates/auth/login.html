@@ -68,7 +68,7 @@
                         <div class="col-6">
                             <form action="{{ url_for('auth.login') }}" method="POST">
                                 <input type="hidden" name="email" value="user@example.com">
-                                <input type="hidden" name="password" value="UserPass123">
+                                <input type="hidden" name="password" value="User@123">
                                 <input type="hidden" name="role" value="adopter">
                                 <button type="submit" class="btn btn-outline-pink btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
                                     <i class="fa-solid fa-user-heart"></i>
@@ -79,7 +79,7 @@
                         <div class="col-6">
                             <form action="{{ url_for('auth.login') }}" method="POST">
                                 <input type="hidden" name="email" value="trust.abc@smartadoption.org">
-                                <input type="hidden" name="password" value="TrustPass123">
+                                <input type="hidden" name="password" value="Trust@123">
                                 <input type="hidden" name="role" value="trust">
                                 <button type="submit" class="btn btn-outline-pink btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
                                     <i class="fa-solid fa-building-shield"></i>
@@ -90,7 +90,7 @@
                         <div class="col-12">
                             <form action="{{ url_for('auth.login') }}" method="POST">
                                 <input type="hidden" name="email" value="admin@smartadoption.org">
-                                <input type="hidden" name="password" value="AdminPass123">
+                                <input type="hidden" name="password" value="Admin@123">
                                 <input type="hidden" name="role" value="admin">
                                 <button type="submit" class="btn btn-outline-dark btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
                                     <i class="fa-solid fa-user-gear"></i>
@@ -98,6 +98,9 @@
                                 </button>
                             </form>
                         </div>
+                    </div>
+                    <div class="mt-2 text-center text-muted" style="font-size: 0.75rem;">
+                        <span>Credentials: <strong>User@123</strong> | <strong>Trust@123</strong> | <strong>Admin@123</strong></span>
                     </div>
                 </div>
 
