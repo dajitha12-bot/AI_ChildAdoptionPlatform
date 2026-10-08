@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Child Adoption Support & Family Matching Platform{% endblock %}
+
+{% block public_content %}
+<div class="landing-hero">
+    <div class="container">
+        <span class="badge badge-pink mb-3 px-3 py-2 fs-6">CO9 AI Mini Project Prototype</span>
+        <h1>Smart Child Adoption Support & Family Matching Platform</h1>
+        <p>A secure digital platform connecting prospective adopters with verified adoption trusts while providing AI-powered guidance and transparent application tracking.</p>
+        
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('auth.login', role='adopter') }}" class="btn btn-pink btn-lg px-4">
+                <i class="fa-solid fa-user-heart me-2"></i> Adopter Login
+            </a>
+            <a href="{{ url_for('auth.login', role='trust') }}" class="btn btn-outline-light btn-lg px-4">
+                <i class="fa-solid fa-building-shield me-2"></i> Trust Login
+            </a>
+            <a href="{{ url_for('auth.login', role='admin') }}" class="btn btn-outline-pink btn-lg px-4">
+                <i class="fa-solid fa-user-gear me-2"></i> Admin Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <h3 class="text-center fw-bold mb-4">Core Platform Features</h3>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h5 class="fw-bold">🤖 AI Adoption Guidance</h5>
+                <p class="text-muted small">GPT-based AI Agent providing application status explanations, next step guidance, and trustworthiness rules in English & Tamil.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-building-circle-check"></i>
+                </div>
+                <h5 class="fw-bold">🏢 Verified Trust Directory</h5>
+                <p class="text-muted small">Select authorized, verified adoption trusts based on location and language preference. (Adopters select verified trusts, not children).</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-timeline"></i>
+                </div>
+                <h5 class="fw-bold">📊 Adoption Journey Timeline</h5>
+                <p class="text-muted small">7-stage transparent tracking system (Registration -> Profile -> Request Sent -> Trust Review -> Approved -> Further Process -> Completed).</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-language"></i>
+                </div>
+                <h5 class="fw-bold">🌐 English + Tamil Support</h5>
+                <p class="text-muted small">Complete bilingual AI assistance and UI localization for accessibility across Tamil Nadu and national regions.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                </div>
+                <h5 class="fw-bold">📧 Real-Time Email Updates</h5>
+                <p class="text-muted small">Automated SMTP notifications sent upon registration, trust request approval, and journey status updates.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom card-pink-accent h-100 text-center">
+                <div class="card-icon mx-auto mb-3">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <h5 class="fw-bold">🔔 Clear Application Status</h5>
+                <p class="text-muted small">Real-time in-app notification bell and status updates keeping prospective parents informed every step of the way.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Educational Disclaimer -->
+    <div class="alert alert-warning border-warning mt-5 p-4 rounded-3 shadow-sm text-center">
+        <i class="fa-solid fa-triangle-exclamation text-warning fs-3 mb-2 d-block"></i>
+        <h5 class="fw-bold">Educational Prototype Disclaimer</h5>
+        <p class="mb-0 text-dark">This is an educational prototype for adoption process support and does NOT replace official adoption authorities (such as CARA/CARINGS), authorized adoption agencies, or legal court procedures.</p>
+    </div>
+</div>
+{% endblock %}

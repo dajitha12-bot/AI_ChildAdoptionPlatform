@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}System Administration Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metric Cards Grid (7 Key Metrics) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Total Adopters</div>
+                    <div class="metric-value">{{ total_adopters }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">Registered prospective adopters</div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Total Trusts</div>
+                    <div class="metric-value">{{ total_trusts }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-building-shield"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">Agencies on platform</div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Verified Trusts</div>
+                    <div class="metric-value text-success">{{ verified_trusts_count }}</div>
+                </div>
+                <div class="card-icon bg-light text-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">Active in directory</div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Pending Verification</div>
+                    <div class="metric-value text-warning">{{ pending_trusts_count }}</div>
+                </div>
+                <div class="card-icon bg-light text-warning">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2"><a href="{{ url_for('admin.trust_verification') }}" class="text-pink text-decoration-none">Action required &rarr;</a></div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-4">
+        <div class="card-custom h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Active Requests</div>
+                    <div class="metric-value fs-3">{{ active_requests }}</div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-file-contract"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">In review / process</div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-4">
+        <div class="card-custom h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Approved Requests</div>
+                    <div class="metric-value fs-3 text-success">{{ approved_requests }}</div>
+                </div>
+                <div class="card-icon bg-light text-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">Approved by trusts</div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-xl-4">
+        <div class="card-custom h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Completed Cases</div>
+                    <div class="metric-value fs-3 text-primary">{{ completed_cases }}</div>
+                </div>
+                <div class="card-icon bg-light text-primary">
+                    <i class="fa-solid fa-flag-checkered"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">Fully finalized cases</div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Overview Tables -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card-custom h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-building-circle-check text-pink me-2"></i>Trust Agencies Overview</h5>
+                <a href="{{ url_for('admin.trust_verification') }}" class="btn btn-sm btn-outline-pink">Manage Trusts</a>
+            </div>
+
+            {% if recent_trusts %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Trust Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in recent_trusts %}
+                                <tr>
+                                    <td class="fw-bold">{{ t.trust_name }}</td>
+                                    <td class="text-muted">{{ t.location }}</td>
+                                    <td>
+                                        <span class="badge {% if t.verified %}badge-approved{% else %}badge-pending{% endif %}">
+                                            {{ t.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('admin.trust_verification') }}" class="btn btn-sm btn-light"><i class="fa-solid fa-gear"></i></a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card-custom h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-desktop text-pink me-2"></i>Platform Monitoring Quick View</h5>
+                <a href="{{ url_for('admin.monitoring') }}" class="btn btn-sm btn-pink">Full Platform Metrics</a>
+            </div>
+            <p class="text-muted small">Monitor real-time system activities, email notification dispatches, and GPT AI Agent conversations across all adopter profiles.</p>
+            
+            <div class="p-3 bg-very-light-pink border border-light-pink rounded">
+                <div class="fw-bold text-dark mb-1"><i class="fa-solid fa-shield-halved text-pink me-1"></i> Admin Role Scoping Notice:</div>
+                <div class="small text-muted">The system administrator oversees trust verification, system security, and performance metrics. Admin accounts do NOT make individual legal adoption decisions.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

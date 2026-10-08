@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Login – Smart Child Adoption Platform{% endblock %}
+
+{% block public_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card-custom shadow-sm p-4">
+                <div class="text-center mb-4">
+                    <div class="card-icon mx-auto mb-2">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </div>
+                    <h4 class="fw-bold">Platform Login</h4>
+                    <p class="text-muted small">Select your role to access your dedicated dashboard</p>
+                </div>
+
+                <!-- Role Selector Tabs -->
+                <ul class="nav nav-pills nav-justified mb-4" id="roleTabs">
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_role == 'adopter' %}active bg-pink text-dark-pink fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('auth.login', role='adopter') }}">
+                            <i class="fa-solid fa-user-heart me-1"></i> Adopter
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_role == 'trust' %}active bg-pink text-dark-pink fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('auth.login', role='trust') }}">
+                            <i class="fa-solid fa-building-shield me-1"></i> Trust
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if selected_role == 'admin' %}active bg-pink text-dark-pink fw-bold{% else %}text-muted{% endif %}" href="{{ url_for('auth.login', role='admin') }}">
+                            <i class="fa-solid fa-user-gear me-1"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+
+                <form action="{{ url_for('auth.login') }}" method="POST" id="loginForm">
+                    <input type="hidden" name="role" id="roleInput" value="{{ selected_role }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <input type="email" name="email" id="emailInput" class="form-control" placeholder="name@example.com" value="{{ email or '' }}" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Password</label>
+                        <input type="password" name="password" id="passwordInput" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-pink w-100 py-2 fs-6 mb-3">
+                        Sign In as {{ selected_role|capitalize }}
+                    </button>
+                </form>
+
+                <div class="text-center border-top pt-3 mt-3">
+                    <p class="small text-muted mb-1">Don't have an account?</p>
+                    <a href="{{ url_for('auth.register', role=selected_role) }}" class="text-pink fw-bold text-decoration-none">
+                        Register as New {{ selected_role|capitalize }}
+                    </a>
+                </div>
+
+                <!-- ⚡ QUICK TEST ACCESS BY ROLE (Pure HTML 1-Click Demo Buttons) -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="fw-bold small text-dark mb-2 text-uppercase" style="letter-spacing: 0.05em; font-size: 0.75rem;">
+                        <i class="fa-solid fa-bolt text-warning me-1"></i> Quick Test Access by Role:
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <form action="{{ url_for('auth.login') }}" method="POST">
+                                <input type="hidden" name="email" value="user@example.com">
+                                <input type="hidden" name="password" value="UserPass123">
+                                <input type="hidden" name="role" value="adopter">
+                                <button type="submit" class="btn btn-outline-pink btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-user-heart"></i>
+                                    <span class="fw-semibold">Adopter Demo</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-6">
+                            <form action="{{ url_for('auth.login') }}" method="POST">
+                                <input type="hidden" name="email" value="trust.abc@smartadoption.org">
+                                <input type="hidden" name="password" value="TrustPass123">
+                                <input type="hidden" name="role" value="trust">
+                                <button type="submit" class="btn btn-outline-pink btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-building-shield"></i>
+                                    <span class="fw-semibold">Trust Agency</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-12">
+                            <form action="{{ url_for('auth.login') }}" method="POST">
+                                <input type="hidden" name="email" value="admin@smartadoption.org">
+                                <input type="hidden" name="password" value="AdminPass123">
+                                <input type="hidden" name="role" value="admin">
+                                <button type="submit" class="btn btn-outline-dark btn-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fa-solid fa-user-gear"></i>
+                                    <span class="fw-semibold">System Admin</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

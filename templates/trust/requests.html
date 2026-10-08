@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Adopter Requests – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Incoming Adopter Requests{% endblock %}
+
+{% block content %}
+<div class="card-custom mb-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-clipboard-list text-pink me-2"></i>Adopter Request Management</h4>
+            <p class="text-muted small mb-0">Review incoming adoption requests from prospective adopters and trigger real-time approval email notifications.</p>
+        </div>
+        <span class="badge badge-pink fs-6">{{ requests|length }} Total Requests</span>
+    </div>
+
+    {% if requests %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Applicant</th>
+                        <th>Contact Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Requested Date</th>
+                        <th class="text-center" style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ req.request_id }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ req.adopter.name if req.adopter else 'Adopter' }}</div>
+                                <div class="text-muted small">{{ req.adopter.address if req.adopter else '' }}</div>
+                            </td>
+                            <td><code>{{ req.adopter.email if req.adopter else 'N/A' }}</code></td>
+                            <td>{{ req.adopter.phone if req.adopter else 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if req.status == 'APPROVED' %}badge-approved{% elif req.status == 'REJECTED' %}badge-rejected{% elif req.status == 'TRUST_REVIEW' %}badge-review{% else %}badge-pending{% endif %}">
+                                    {{ req.status }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ req.created_at[:10] if req.created_at else 'N/A' }}</td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reqModal{{ loop.index }}">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </button>
+
+                                    {% if req.status != 'APPROVED' %}
+                                        <form action="{{ url_for('trust.request_action', req_id=req._id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-sm btn-pink">
+                                                <i class="fa-solid fa-check me-1"></i> Approve
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('trust.request_action', req_id=req._id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to reject this request?')">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="badge bg-light text-success border border-success-subtle p-2">
+                                            <i class="fa-solid fa-envelope-circle-check me-1"></i> Email Sent
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Details Modal -->
+                        <div class="modal fade" id="reqModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                                        <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-file-user text-pink me-2"></i>Adopter Profile Details: {{ req.request_id }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        {% if req.adopter %}
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-dark mb-1">Applicant Name:</h6>
+                                                    <p class="text-muted">{{ req.adopter.name }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-dark mb-1">Email (SMTP Target):</h6>
+                                                    <p class="text-muted"><code>{{ req.adopter.email }}</code></p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-dark mb-1">Phone Number:</h6>
+                                                    <p class="text-muted">{{ req.adopter.phone }}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-dark mb-1">Preferred Language:</h6>
+                                                    <p class="text-muted">{{ req.adopter.language }}</p>
+                                                </div>
+                                                <div class="col-12">
+                                                    <h6 class="fw-bold text-dark mb-1">Address:</h6>
+                                                    <p class="text-muted">{{ req.adopter.address }}</p>
+                                                </div>
+                                                {% if req.adopter.family_info %}
+                                                <div class="col-12 border-top pt-3">
+                                                    <h6 class="fw-bold text-dark mb-2">Family & Preferences:</h6>
+                                                    <ul class="list-unstyled small text-muted">
+                                                        <li><strong>Marital Status:</strong> {{ req.adopter.family_info.marital_status }}</li>
+                                                        <li><strong>Occupation:</strong> {{ req.adopter.family_info.occupation }}</li>
+                                                        <li><strong>Annual Income:</strong> {{ req.adopter.family_info.annual_income }}</li>
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <p class="text-muted">Adopter details not found.</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer border-top-0">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        {% if req.status != 'APPROVED' %}
+                                        <form action="{{ url_for('trust.request_action', req_id=req._id) }}" method="POST">
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-pink">Approve & Send Email Immediately</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fa-solid fa-clipboard-question fs-1 text-muted mb-3 d-block"></i>
+            <h5 class="fw-bold">No Adopter Requests Received</h5>
+            <p class="text-muted mb-0">When prospective adopters select your trust, their requests will appear here.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

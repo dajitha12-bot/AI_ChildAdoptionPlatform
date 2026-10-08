@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Trust Verification – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Trust Verification & Agency Moderation{% endblock %}
+
+{% block content %}
+<div class="card-custom mb-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-shield-check text-pink me-2"></i>Registered Adoption Trusts Verification</h4>
+            <p class="text-muted small mb-0">Approve, reject, or suspend adoption trusts. Only verified trusts appear in the adopter's Verified Trust Directory.</p>
+        </div>
+    </div>
+
+    {% if trusts %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Trust Name</th>
+                        <th>Location</th>
+                        <th>Email & Contact</th>
+                        <th>Languages</th>
+                        <th>Status</th>
+                        <th class="text-center" style="width: 260px;">Verification Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trust in trusts %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ trust.trust_name }}</td>
+                            <td>{{ trust.location }}</td>
+                            <td>
+                                <div><code>{{ trust.email }}</code></div>
+                                <div class="small text-muted">{{ trust.phone }}</div>
+                            </td>
+                            <td>
+                                <span class="small text-muted">{{ trust.languages|join(', ') if trust.languages is iterable and trust.languages is not string else trust.languages }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {% if trust.verified %}badge-approved{% elif trust.status == 'Suspended' %}badge-rejected{% else %}badge-pending{% endif %}">
+                                    {{ trust.status }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    {% if not trust.verified %}
+                                        <form action="{{ url_for('admin.trust_action', trust_id=trust._id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="verify">
+                                            <button type="submit" class="btn btn-sm btn-pink">
+                                                <i class="fa-solid fa-check me-1"></i> Verify
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form action="{{ url_for('admin.trust_action', trust_id=trust._id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="suspend">
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                <i class="fa-solid fa-pause me-1"></i> Suspend
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    <form action="{{ url_for('admin.trust_action', trust_id=trust._id) }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Reject this trust?')">
+                                            <i class="fa-solid fa-xmark"></i> Reject
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted text-center py-4 mb-0">No registered trusts found in database.</p>
+    {% endif %}
+</div>
+{% endblock %}

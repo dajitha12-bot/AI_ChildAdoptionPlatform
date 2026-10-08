@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Trust Data Management – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}India-Wide Adoption Agency Directory Management{% endblock %}
+
+{% block content %}
+<!-- Top Header & Action Toolbar -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-building-circle-check text-pink me-2"></i>Trust Data Management</h4>
+        <p class="text-muted small mb-0">Manage and verify adoption agencies across India using official public records (CARA / SARA / State Registries)</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-pink" data-bs-toggle="modal" data-bs-target="#addAgencyModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Agency
+        </button>
+        <button type="button" class="btn btn-outline-pink" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+            <i class="fa-solid fa-file-csv me-1"></i> Import CSV
+        </button>
+        <a href="{{ url_for('admin.export_csv') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-download me-1"></i> Export CSV
+        </a>
+        <a href="{{ url_for('admin.download_template') }}" class="btn btn-light border text-muted">
+            <i class="fa-solid fa-file-lines me-1"></i> CSV Template
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards (5 Key Metrics) -->
+<div class="row g-3 mb-4">
+    <div class="col-md">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Total Agencies</div>
+            <div class="metric-value fs-3">{{ total_agencies }}</div>
+            <div class="small text-muted mt-1">India-Wide Database</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Verified Agencies</div>
+            <div class="metric-value fs-3 text-success">{{ verified_agencies }}</div>
+            <div class="small text-muted mt-1">Active in Directory</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Pending Verification</div>
+            <div class="metric-value fs-3 text-warning">{{ pending_verification }}</div>
+            <div class="small text-muted mt-1">Requires Admin Review</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Review Due</div>
+            <div class="metric-value fs-3 text-danger">{{ review_due_count }}</div>
+            <div class="small text-muted mt-1">91-180 Days Unverified</div>
+        </div>
+    </div>
+    <div class="col-md">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Inactive Agencies</div>
+            <div class="metric-value fs-3 text-secondary">{{ inactive_agencies }}</div>
+            <div class="small text-muted mt-1">Excluded from Search</div>
+        </div>
+    </div>
+</div>
+
+<!-- Agency Directory Table -->
+<div class="card-custom p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-list-check text-pink me-2"></i>Registered Adoption Agencies Directory</h5>
+        <span class="badge badge-pink">{{ agencies|length }} Total Records</span>
+    </div>
+
+    {% if agencies %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Agency Name</th>
+                        <th>State</th>
+                        <th>District / City</th>
+                        <th>Agency Type</th>
+                        <th>Official Source</th>
+                        <th>Last Verified</th>
+                        <th>Freshness</th>
+                        <th>Status</th>
+                        <th class="text-center" style="width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in agencies %}
+                        <tr>
+                            <td class="fw-bold text-dark">
+                                {{ a.trust_name }}
+                                {% if a.website %}
+                                    <a href="{{ a.website }}" target="_blank" class="text-pink ms-1" title="Visit Official Website"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem;"></i></a>
+                                {% endif %}
+                            </td>
+                            <td>{{ a.state or 'N/A' }}</td>
+                            <td>{{ a.city or a.district or 'N/A' }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ a.agency_type or 'SAA' }}</span></td>
+                            <td class="small text-muted text-truncate" style="max-width: 150px;" title="{{ a.verification_source }}">
+                                {{ a.verification_source or 'Official Source' }}
+                            </td>
+                            <td class="small text-muted">
+                                {{ a.last_verified[:10] if a.last_verified else 'Never' }}
+                            </td>
+                            <td>
+                                <span class="badge {{ a.freshness.badge_class }}">
+                                    {{ a.freshness.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if a.verified and a.status in ['ACTIVE', 'Verified'] %}
+                                    <span class="badge badge-approved">ACTIVE</span>
+                                {% elif a.status in ['INACTIVE', 'DEACTIVATED', 'Suspended', 'Rejected'] %}
+                                    <span class="badge badge-rejected">INACTIVE</span>
+                                {% else %}
+                                    <span class="badge badge-pending">PENDING</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#viewModal{{ loop.index }}" title="View Details">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+
+                                    {% if not a.verified %}
+                                        <button type="button" class="btn btn-sm btn-pink" data-bs-toggle="modal" data-bs-target="#verifyModal{{ loop.index }}" title="Verify Agency">
+                                            <i class="fa-solid fa-check"></i> Verify
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ loop.index }}" title="Edit Details">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    {% endif %}
+
+                                    {% if a.status in ['ACTIVE', 'Verified', 'PENDING_REVIEW'] %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal{{ loop.index }}" title="Deactivate Agency">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </button>
+                                    {% else %}
+                                        <form action="{{ url_for('admin.reactivate_agency', agency_id=a._id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Reactivate Agency">
+                                                <i class="fa-solid fa-rotate-left"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- View Details Modal -->
+                        <div class="modal fade" id="viewModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                                        <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-building-shield text-pink me-2"></i>{{ a.trust_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-4">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <h6>State & City:</h6>
+                                                <p class="text-muted">{{ a.city }}, {{ a.district }}, {{ a.state }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Agency Type:</h6>
+                                                <p class="text-muted">{{ a.agency_type or 'Specialized Adoption Agency (SAA)' }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Public Phone:</h6>
+                                                <p class="text-muted">{{ a.phone or 'Not Provided' }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Public Email:</h6>
+                                                <p class="text-muted">{{ a.email or 'Not Provided' }}</p>
+                                            </div>
+                                            <div class="col-12">
+                                                <h6>Public Address:</h6>
+                                                <p class="text-muted">{{ a.address or a.location or 'N/A' }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Supported Languages:</h6>
+                                                <p class="text-muted">{{ a.languages|join(', ') if a.languages is iterable and a.languages is not string else a.languages }}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Official Source & URL:</h6>
+                                                <p class="text-muted mb-0">{{ a.verification_source }}</p>
+                                                {% if a.source_url %}
+                                                    <a href="{{ a.source_url }}" target="_blank" class="small text-pink">{{ a.source_url }}</a>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Verification Freshness:</h6>
+                                                <span class="badge {{ a.freshness.badge_class }} fs-6">{{ a.freshness.status }}</span>
+                                                <div class="small text-muted mt-1">Last Verified: {{ a.last_verified[:10] if a.last_verified else 'Never' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Verify Modal -->
+                        <div class="modal fade" id="verifyModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content border-0 shadow">
+                                    <form action="{{ url_for('admin.verify_agency', agency_id=a._id) }}" method="POST">
+                                        <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                                            <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-shield-check text-pink me-2"></i>Verify Agency Record</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <p class="small text-muted">Review the official source before marking this agency as VERIFIED and ACTIVE.</p>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Agency Name</label>
+                                                <input type="text" class="form-control" value="{{ a.trust_name }}" readonly>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Verification Source Name</label>
+                                                <input type="text" name="verification_source" class="form-control" value="{{ a.verification_source or 'Central Adoption Resource Authority (CARA)' }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Official Source URL</label>
+                                                <input type="url" name="source_url" class="form-control" value="{{ a.source_url or 'https://cara.wcd.gov.in' }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-pink">Confirm & Verify Agency</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content border-0 shadow">
+                                    <form action="{{ url_for('admin.update_agency', agency_id=a._id) }}" method="POST">
+                                        <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                                            <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-pen-to-square text-pink me-2"></i>Edit Agency Record</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Agency Name</label>
+                                                    <input type="text" name="trust_name" class="form-control" value="{{ a.trust_name }}" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Agency Type</label>
+                                                    <input type="text" name="agency_type" class="form-control" value="{{ a.agency_type or 'Specialized Adoption Agency (SAA)' }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">State</label>
+                                                    <input type="text" name="state" class="form-control" value="{{ a.state }}" required>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">District</label>
+                                                    <input type="text" name="district" class="form-control" value="{{ a.district }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-semibold">City</label>
+                                                    <input type="text" name="city" class="form-control" value="{{ a.city }}" required>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label fw-semibold">Public Address</label>
+                                                    <textarea name="address" class="form-control" rows="2">{{ a.address }}</textarea>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Phone</label>
+                                                    <input type="text" name="phone" class="form-control" value="{{ a.phone }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Email</label>
+                                                    <input type="email" name="email" class="form-control" value="{{ a.email }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Official Website</label>
+                                                    <input type="url" name="website" class="form-control" value="{{ a.website }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Supported Languages (comma-separated)</label>
+                                                    <input type="text" name="languages" class="form-control" value="{{ a.languages|join(', ') if a.languages is iterable and a.languages is not string else a.languages }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Verification Source Name</label>
+                                                    <input type="text" name="verification_source" class="form-control" value="{{ a.verification_source }}">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Official Source URL</label>
+                                                    <input type="url" name="source_url" class="form-control" value="{{ a.source_url }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-pink">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deactivate Confirmation Modal -->
+                        <div class="modal fade" id="deactivateModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content border-0 shadow">
+                                    <form action="{{ url_for('admin.deactivate_agency', agency_id=a._id) }}" method="POST">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>Confirm Agency Deactivation</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-4 text-center">
+                                            <i class="fa-solid fa-ban text-danger fs-1 mb-3"></i>
+                                            <h5>Are you sure you want to deactivate <strong>{{ a.trust_name }}</strong>?</h5>
+                                            <p class="text-muted small mb-0">Deactivating an agency immediately excludes it from all adopter search results and AI directory lookup queries.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Yes, Deactivate Agency</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fa-solid fa-building-circle-xmark fs-1 text-muted mb-3 d-block"></i>
+            <h5 class="fw-bold">No Agency Records Found</h5>
+            <p class="text-muted mb-0">Click "Add Agency" or "Import CSV" to populate the directory.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Agency Modal -->
+<div class="modal fade" id="addAgencyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('admin.add_agency') }}" method="POST">
+                <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-plus-circle text-pink me-2"></i>Add New Adoption Agency</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Agency Name *</label>
+                            <input type="text" name="trust_name" class="form-control" placeholder="e.g. Hope Adoption Center" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Agency Type *</label>
+                            <select name="agency_type" class="form-select">
+                                <option value="Specialized Adoption Agency (SAA)">Specialized Adoption Agency (SAA)</option>
+                                <option value="State Adoption Resource Agency (SARA)">State Adoption Resource Agency (SARA)</option>
+                                <option value="Child Care Institution (CCI)">Child Care Institution (CCI)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">State *</label>
+                            <input type="text" name="state" class="form-control" placeholder="e.g. Tamil Nadu" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">District</label>
+                            <input type="text" name="district" class="form-control" placeholder="e.g. Madurai">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">City *</label>
+                            <input type="text" name="city" class="form-control" placeholder="e.g. Madurai" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Public Address</label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="Full street address"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Public Phone</label>
+                            <input type="text" name="phone" class="form-control" placeholder="+91 9443123456">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Public Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="contact@agency.org">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Official Website</label>
+                            <input type="url" name="website" class="form-control" placeholder="https://agency.org">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Supported Languages (comma-separated)</label>
+                            <input type="text" name="languages" class="form-control" placeholder="Tamil, English" value="Tamil, English">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Verification Source Name</label>
+                            <input type="text" name="verification_source" class="form-control" placeholder="e.g. State Adoption Resource Agency (SARA)" value="Central Adoption Resource Authority (CARA)">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Official Source URL</label>
+                            <input type="url" name="source_url" class="form-control" placeholder="https://cara.wcd.gov.in" value="https://cara.wcd.gov.in">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" name="mark_verified" id="markVerifiedCheck">
+                                <label class="form-check-label fw-semibold text-dark" for="markVerifiedCheck">Mark as Verified and Active immediately (Source Reviewed)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-pink">Save Agency</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('admin.import_csv') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-header bg-very-light-pink border-bottom border-light-pink">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-file-csv text-pink me-2"></i>Import Adoption Agencies from CSV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">Upload a CSV file containing agency details. The import script will automatically normalize fields and detect duplicates.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select CSV File *</label>
+                        <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                    </div>
+                    <div class="p-3 bg-light rounded small text-muted">
+                        <div class="fw-bold text-dark mb-1"><i class="fa-solid fa-download text-pink me-1"></i>Need the format?</div>
+                        <a href="{{ url_for('admin.download_template') }}" class="text-pink fw-semibold">Download Sample CSV Template</a>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-pink">Upload & Process CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

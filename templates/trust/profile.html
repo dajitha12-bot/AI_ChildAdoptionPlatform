@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Trust Profile Management – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Trust Profile Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-custom">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                <div>
+                    <h4 class="fw-bold mb-1">{{ trust.trust_name if trust else user.name }}</h4>
+                    <span class="text-muted small"><i class="fa-solid fa-location-dot text-pink me-1"></i>{{ trust.location if trust else 'Location not set' }}</span>
+                </div>
+                <div>
+                    {% if trust and trust.verified %}
+                        <span class="badge badge-approved fs-6 p-2"><i class="fa-solid fa-circle-check me-1"></i>Verified Trust</span>
+                    {% elif trust and trust.status == 'Suspended' %}
+                        <span class="badge badge-rejected fs-6 p-2"><i class="fa-solid fa-ban me-1"></i>Suspended</span>
+                    {% else %}
+                        <span class="badge badge-pending fs-6 p-2"><i class="fa-solid fa-clock me-1"></i>Verification Pending (Admin Review)</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form action="{{ url_for('trust.profile') }}" method="POST">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-building text-pink me-2"></i>Trust Agency Information</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Official Trust Name</label>
+                        <input type="text" name="trust_name" class="form-control" value="{{ trust.trust_name if trust else user.name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Official Email Address</label>
+                        <input type="email" name="email" class="form-control" value="{{ trust.email if trust else user.email }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" value="{{ trust.phone if trust else user.phone }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">District / Operating Location</label>
+                        <input type="text" name="location" class="form-control" value="{{ trust.location if trust else user.address }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Supported Languages (comma-separated)</label>
+                        <input type="text" name="languages" class="form-control" value="{{ trust.languages|join(', ') if trust and trust.languages is iterable and trust.languages is not string else 'English, Tamil' }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Trust Description / Service Overview</label>
+                        <textarea name="description" class="form-control" rows="3">{{ trust.description if trust else '' }}</textarea>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-lock text-pink me-2"></i>Account Security</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">New Password (leave blank to keep current)</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-pink px-4 py-2">
+                        <i class="fa-solid fa-floppy-disk me-2"></i> Update Trust Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

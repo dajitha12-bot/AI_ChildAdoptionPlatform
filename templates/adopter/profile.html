@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Management – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Profile & Preferences Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card-custom">
+            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                <div class="avatar-circle fs-3" style="width: 54px; height: 54px;">
+                    {{ user.name[0] if user.name else 'A' }}
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-0">{{ user.name }}</h4>
+                    <span class="badge badge-pink text-capitalize">{{ user.role }} Account</span>
+                    <span class="text-muted small ms-2"><i class="fa-solid fa-envelope me-1"></i>{{ user.email }}</span>
+                </div>
+            </div>
+
+            <form action="{{ url_for('adopter.profile') }}" method="POST">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-id-card text-pink me-2"></i>Personal Contact Information</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email Address (MongoDB Stored)</label>
+                        <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+                        <div class="form-text text-muted small">Real-time SMTP updates will be sent to this email.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" value="{{ user.phone or '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Preferred Language</label>
+                        <select name="language" class="form-select">
+                            <option value="English" {% if user.language == 'English' %}selected{% endif %}>English</option>
+                            <option value="Tamil" {% if user.language == 'Tamil' %}selected{% endif %}>Tamil (தமிழ்)</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Residential Address</label>
+                        <textarea name="address" class="form-control" rows="2">{{ user.address or '' }}</textarea>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-users text-pink me-2"></i>Family & Adoption Profile</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Marital Status</label>
+                        <input type="text" name="marital_status" class="form-control" placeholder="e.g. Married / Single" value="{{ user.family_info.marital_status if user.family_info else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Occupation</label>
+                        <input type="text" name="occupation" class="form-control" placeholder="e.g. Software Engineer" value="{{ user.family_info.occupation if user.family_info else '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Annual Household Income</label>
+                        <input type="text" name="annual_income" class="form-control" placeholder="e.g. ₹12,000,000" value="{{ user.family_info.annual_income if user.family_info else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Preferred Trust Location / District</label>
+                        <input type="text" name="preferred_location" class="form-control" placeholder="e.g. Madurai, Chennai" value="{{ user.preferences.location if user.preferences else '' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Preferred Child Age Group</label>
+                        <input type="text" name="preferred_age_group" class="form-control" placeholder="e.g. 0-2 years, 2-4 years" value="{{ user.preferences.age_group if user.preferences else '' }}">
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-lock text-pink me-2"></i>Security Settings</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">New Password (leave blank to keep current)</label>
+                        <input type="password" name="new_password" class="form-control" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-pink px-4 py-2">
+                        <i class="fa-solid fa-floppy-disk me-2"></i> Save Profile & Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

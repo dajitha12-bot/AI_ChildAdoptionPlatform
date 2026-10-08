@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Child Adoption Support & Family Matching Platform{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if current_user %}
+    <!-- App Sidebar -->
+    <aside class="app-sidebar">
+        <div class="sidebar-header">
+            <a href="#" class="sidebar-brand">
+                <i class="fa-solid fa-heart"></i>
+                <span>SMART ADOPTION</span>
+            </a>
+            <div class="sidebar-subbrand">
+                {% if current_user.role == 'adopter' %}Family Support Platform
+                {% elif current_user.role == 'trust' %}Trust Portal
+                {% elif current_user.role == 'admin' %}Administration
+                {% endif %}
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Navigation</div>
+
+            {% if current_user.role == 'adopter' %}
+                <a href="{{ url_for('adopter.dashboard') }}" class="sidebar-link {% if request.endpoint == 'adopter.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i> <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('adopter.profile') }}" class="sidebar-link {% if request.endpoint == 'adopter.profile' %}active{% endif %}">
+                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
+                </a>
+                <a href="{{ url_for('adopter.verified_trusts') }}" class="sidebar-link {% if request.endpoint == 'adopter.verified_trusts' %}active{% endif %}">
+                    <i class="fa-solid fa-building-shield"></i> <span>Verified Agencies</span>
+                </a>
+                <a href="{{ url_for('adopter.journey') }}" class="sidebar-link {% if request.endpoint == 'adopter.journey' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i> <span>My Adoption Journey</span>
+                </a>
+                <a href="{{ url_for('adopter.ai_assistant') }}" class="sidebar-link {% if request.endpoint == 'adopter.ai_assistant' %}active{% endif %}">
+                    <i class="fa-solid fa-robot"></i> <span>AI Adoption Assistant</span>
+                </a>
+
+            {% elif current_user.role == 'trust' %}
+                <a href="{{ url_for('trust.dashboard') }}" class="sidebar-link {% if request.endpoint == 'trust.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i> <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('trust.profile') }}" class="sidebar-link {% if request.endpoint == 'trust.profile' %}active{% endif %}">
+                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
+                </a>
+                <a href="{{ url_for('trust.requests_list') }}" class="sidebar-link {% if request.endpoint == 'trust.requests_list' %}active{% endif %}">
+                    <i class="fa-solid fa-clipboard-list"></i> <span>Adopter Requests</span>
+                </a>
+                <a href="{{ url_for('trust.applications') }}" class="sidebar-link {% if request.endpoint == 'trust.applications' %}active{% endif %}">
+                    <i class="fa-solid fa-bars-progress"></i> <span>Application Management</span>
+                </a>
+
+            {% elif current_user.role == 'admin' %}
+                <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i> <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.trust_data_management') }}" class="sidebar-link {% if request.endpoint == 'admin.trust_data_management' %}active{% endif %}">
+                    <i class="fa-solid fa-building-circle-check"></i> <span>Trust Data Management</span>
+                </a>
+                <a href="{{ url_for('admin.profile') }}" class="sidebar-link {% if request.endpoint == 'admin.profile' %}active{% endif %}">
+                    <i class="fa-solid fa-user"></i> <span>Profile Management</span>
+                </a>
+                <a href="{{ url_for('admin.trust_verification') }}" class="sidebar-link {% if request.endpoint == 'admin.trust_verification' %}active{% endif %}">
+                    <i class="fa-solid fa-shield-check"></i> <span>Trust Moderation</span>
+                </a>
+                <a href="{{ url_for('admin.monitoring') }}" class="sidebar-link {% if request.endpoint == 'admin.monitoring' %}active{% endif %}">
+                    <i class="fa-solid fa-desktop"></i> <span>Platform Monitoring</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link text-danger">
+                <i class="fa-solid fa-right-from-bracket text-danger"></i> <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- App Header Navbar -->
+    <header class="app-header">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-light d-lg-none" id="sidebarToggle">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="header-title">
+                <h4>{% block header_title %}Dashboard{% endblock %}</h4>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+                <a class="notif-bell" href="#" id="notifDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-regular fa-bell"></i>
+                    {% if unread_count > 0 %}
+                    <span class="notif-badge">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 p-2" aria-labelledby="notifDropdownBtn" style="width: 320px; max-height: 350px; overflow-y: auto;">
+                    <li class="dropdown-header fw-bold text-dark d-flex justify-content-between align-items-center pb-2 border-bottom">
+                        <span>Notifications</span>
+                        <span class="badge bg-pink text-dark-pink">{{ unread_count }} new</span>
+                    </li>
+                    {% if notifications %}
+                        {% for n in notifications %}
+                        <li class="p-2 border-bottom small">
+                            <div class="fw-semibold text-dark">{{ n.message }}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">{{ n.created_at[:16].replace('T', ' ') }}</div>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="p-3 text-center text-muted small">No notifications yet.</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Profile Menu -->
+            <div class="dropdown">
+                <a href="#" class="user-profile-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="avatar-circle">
+                        {{ current_user.name[0] if current_user.name else 'U' }}
+                    </div>
+                    <span class="d-none d-md-inline">{{ current_user.name }}</span>
+                    <i class="fa-solid fa-chevron-down ms-1 text-muted" style="font-size: 0.8rem;"></i>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
+                    <li><h6 class="dropdown-header">{{ current_user.email }}</h6></li>
+                    <li><span class="dropdown-item-text badge badge-pink mb-2 ms-3 text-capitalize">{{ current_user.role }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% if current_user.role == 'adopter' %}
+                        <li><a class="dropdown-item" href="{{ url_for('adopter.profile') }}"><i class="fa-solid fa-user me-2"></i> Profile</a></li>
+                    {% elif current_user.role == 'trust' %}
+                        <li><a class="dropdown-item" href="{{ url_for('trust.profile') }}"><i class="fa-solid fa-user me-2"></i> Profile</a></li>
+                    {% elif current_user.role == 'admin' %}
+                        <li><a class="dropdown-item" href="{{ url_for('admin.profile') }}"><i class="fa-solid fa-user me-2"></i> Profile</a></li>
+                    {% endif %}
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="app-main">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+{% else %}
+    <!-- Public Header / Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3 border-bottom border-danger-subtle">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+                <i class="fa-solid fa-heart text-pink"></i>
+                <span>SMART CHILD ADOPTION PLATFORM</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="publicNav">
+                <ul class="navbar-menu ms-auto navbar-nav gap-2">
+                    <li class="nav-item"><a class="nav-link text-white" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="btn btn-outline-pink ms-2" href="{{ url_for('auth.login', role='adopter') }}">Adopter Login</a></li>
+                    <li class="nav-item"><a class="btn btn-outline-light ms-2" href="{{ url_for('auth.login', role='trust') }}">Trust Login</a></li>
+                    <li class="nav-item"><a class="btn btn-pink ms-2" href="{{ url_for('auth.login', role='admin') }}">Admin Login</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-public">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container mt-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block public_content %}{% endblock %}
+    </div>
+{% endif %}
+
+</body>
+</html>
+

@@ -1,0 +1,28 @@
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables & secrets
+.env
+
+# Uploaded documents (keep directory structure if needed, ignore contents)
+uploads/documents/*
+!uploads/documents/.gitkeep
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Scratch & IDE
+scratch/
+.idea/
+.vscode/
+*.swp
+*.tmp

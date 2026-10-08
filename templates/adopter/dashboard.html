@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Adopter Dashboard – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Adopter Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Card 1: Request Status -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Request Status</div>
+                    <div class="metric-value fs-4 mt-1">
+                        <span class="badge {% if status_str == 'APPROVED' %}badge-approved{% elif status_str == 'TRUST_REVIEW' %}badge-review{% else %}badge-pending{% endif %}">
+                            {{ status_str }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-file-contract"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-3">
+                Request ID: <strong>{{ request.request_id if request else 'Not Created' }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Selected Trust -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Selected Trust</div>
+                    <div class="fw-bold fs-5 mt-1 text-dark text-truncate" style="max-width: 170px;">
+                        {{ trust_name }}
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-building-circle-check"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-3">
+                {% if trust %}Location: {{ trust.location }}{% else %}<a href="{{ url_for('adopter.verified_trusts') }}" class="text-pink text-decoration-none">Choose a Trust &rarr;</a>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Current Journey Stage -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Current Stage</div>
+                    <div class="fw-bold fs-5 mt-1 text-pink">
+                        {{ journey_stage }}
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-3">
+                <a href="{{ url_for('adopter.journey') }}" class="text-pink text-decoration-none">View full timeline &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Latest Update -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card-custom card-pink-accent h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="metric-label">Latest Notification</div>
+                    <div class="small fw-semibold text-dark mt-1 text-truncate" style="max-width: 170px;" title="{{ latest_update }}">
+                        {{ latest_update }}
+                    </div>
+                </div>
+                <div class="card-icon">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+            </div>
+            <div class="small text-muted mt-3">
+                Real-time SMTP updates enabled
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Adoption Journey Preview & Quick Actions -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card-custom mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-route text-pink me-2"></i>Adoption Journey Status</h5>
+                <a href="{{ url_for('adopter.journey') }}" class="btn btn-sm btn-outline-pink">Full Journey Timeline</a>
+            </div>
+
+            <!-- Mini Horizontal Journey Stepper -->
+            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3 text-center my-3">
+                {% for stg in JOURNEY_STAGES %}
+                    {% set is_past = loop.index <= (JOURNEY_STAGES.index(journey_stage) + 1 if journey_stage in JOURNEY_STAGES else 1) %}
+                    {% set is_active = (journey_stage == stg) %}
+                    <div class="px-1">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 fw-bold
+                            {% if is_active %}bg-pink text-white shadow-sm{% elif is_past %}bg-dark-pink text-white{% else %}bg-white border text-muted{% endif %}"
+                            style="width: 32px; height: 32px; font-size: 0.8rem;">
+                            {% if is_past %}&check;{% else %}{{ loop.index }}{% endif %}
+                        </div>
+                        <span class="d-none d-md-block" style="font-size: 0.7rem; color: {% if is_active %}#BE185D{% else %}#6B7280{% endif %}; fw-bold;">
+                            {{ stg.replace('_', ' ') }}
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="alert alert-light border-start border-pink border-4 mt-3 mb-0">
+                <div class="fw-bold text-dark"><i class="fa-solid fa-circle-info text-pink me-1"></i> Current Guidance Note:</div>
+                <div class="small text-muted mt-1">
+                    {% if journey_stage == 'REGISTRATION' %}
+                        Please complete your adopter profile and family preferences under Profile Management.
+                    {% elif journey_stage == 'PROFILE_COMPLETED' %}
+                        Browse verified adoption trusts in your district and send an adoption request.
+                    {% elif journey_stage == 'REQUEST_SENT' or journey_stage == 'TRUST_REVIEW' %}
+                        Your request is under review by {{ trust_name }}. An email notification will be sent upon approval.
+                    {% elif journey_stage == 'APPROVED' %}
+                        🎉 Congratulations! Your request has been APPROVED by {{ trust_name }}. Expect automated email next steps.
+                    {% else %}
+                        Your adoption application is progressing smoothly through the official channels.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- AI Agent Quick Access Card -->
+        <div class="card-custom bg-very-light-pink border-light-pink text-center p-4">
+            <div class="card-icon mx-auto mb-3 bg-pink text-white">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <h5 class="fw-bold text-dark">AI Adoption Assistant</h5>
+            <p class="small text-muted">Ask questions about your adoption status, required documents, or verified trusts in English or Tamil.</p>
+            <a href="{{ url_for('adopter.ai_assistant') }}" class="btn btn-pink w-100 py-2">
+                <i class="fa-solid fa-comments me-2"></i> Open AI Assistant
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

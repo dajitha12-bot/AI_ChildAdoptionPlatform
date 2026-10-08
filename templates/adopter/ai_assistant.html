@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}AI Adoption Assistant – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}AI Adoption Assistant{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- AI Assistant Header Card -->
+        <div class="card-custom mb-3 p-3 bg-very-light-pink border-light-pink">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="card-icon bg-pink text-white">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">GPT-Powered AI Adoption Agent</h5>
+                        <div class="small text-muted">Context-aware guidance • English & Tamil Support • Safe & Neutral</div>
+                    </div>
+                </div>
+
+                <!-- Language Toggle Buttons & Clear Chat (Pure HTML) -->
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small fw-semibold text-muted">Language:</span>
+                    <a href="{{ url_for('adopter.ai_assistant', lang='English') }}" class="btn btn-sm {% if current_lang == 'English' %}btn-pink{% else %}btn-outline-pink{% endif %}">English</a>
+                    <a href="{{ url_for('adopter.ai_assistant', lang='Tamil') }}" class="btn btn-sm {% if current_lang == 'Tamil' %}btn-pink{% else %}btn-outline-pink{% endif %}">தமிழ்</a>
+                    
+                    <form action="{{ url_for('adopter.ai_assistant') }}" method="POST" class="d-inline ms-2">
+                        <input type="hidden" name="clear_chat" value="1">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Clear Chat History">
+                            <i class="fa-solid fa-trash-can"></i> Clear
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Container UI -->
+        <div class="chat-container shadow-sm mb-4">
+            <div class="chat-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="spinner-grow spinner-grow-sm text-pink" role="status"></span>
+                    <span class="fw-bold text-dark small">AI Agent Online & Context Loaded (Language: {{ current_lang }})</span>
+                </div>
+                <span class="badge badge-pink">CO9 AI Prototype</span>
+            </div>
+
+            <!-- Messages Feed (Pure HTML Rendered from Session) -->
+            <div class="chat-messages p-3" style="max-height: 480px; overflow-y: auto;">
+                {% for msg in messages %}
+                    <div class="chat-bubble {{ msg.sender }} mb-3 p-3 rounded-3 {% if msg.sender == 'user' %}bg-pink text-dark ms-auto max-w-75{% else %}bg-white border text-dark me-auto max-w-85 shadow-sm{% endif %}">
+                        {% if msg.sender == 'agent' %}
+                            <strong class="text-pink"><i class="fa-solid fa-robot me-1"></i> AI Adoption Assistant</strong><br>
+                            <div class="mt-1" style="white-space: pre-line;">{{ msg.text }}</div>
+
+                            <!-- Grounded Database Agency Cards -->
+                            {% if msg.agencies and msg.agencies|length > 0 %}
+                                <div class="mt-3 border-top pt-2">
+                                    <h6 class="fw-bold text-dark small mb-2"><i class="fa-solid fa-building-circle-check text-pink me-1"></i> Grounded Database Agency Results (MongoDB):</h6>
+                                    <div class="row g-2">
+                                        {% for a in msg.agencies %}
+                                            <div class="col-12 col-md-6">
+                                                <div class="card p-3 border shadow-sm bg-white h-100 rounded-3" style="font-size: 0.85rem;">
+                                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                                        <strong class="text-dark">{{ a.agency_name }}</strong>
+                                                        <span class="badge {{ a.badge_class or 'badge-approved' }}" style="font-size: 0.65rem;">{{ a.freshness_status or 'Verified' }}</span>
+                                                    </div>
+                                                    <div class="text-muted small mb-1"><i class="fa-solid fa-location-dot text-pink me-1"></i>{{ a.city or a.district }}, {{ a.state }}</div>
+                                                    <div class="text-muted small mb-1"><strong>Type:</strong> {{ a.agency_type or 'SAA' }}</div>
+                                                    <div class="text-muted small mb-2"><strong>Languages:</strong> {{ a.languages|join(', ') if a.languages is iterable and a.languages is not string else a.languages }}</div>
+                                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                                                        <span class="small text-muted" style="font-size: 0.7rem;">Source: {{ a.verification_source or 'Official Registry' }}</span>
+                                                        <a href="{{ url_for('adopter.verified_trusts', apply_trust_id=a.id) }}" class="btn btn-sm btn-pink py-1 px-2" style="font-size: 0.75rem;">Choose Agency</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <span class="chat-timestamp d-block text-end text-muted small mt-2" style="font-size: 0.7rem;">{{ msg.timestamp }}</span>
+                        {% else %}
+                            <div style="white-space: pre-line;">{{ msg.text }}</div>
+                            <span class="chat-timestamp d-block text-end small mt-1" style="font-size: 0.7rem; color: rgba(0,0,0,0.6);">{{ msg.timestamp }}</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Suggested Question Pills & Form Submission (Pure HTML) -->
+            <div class="chat-input-area border-top p-3 bg-light">
+                <form action="{{ url_for('adopter.ai_assistant') }}" method="POST">
+                    <input type="hidden" name="language" value="{{ current_lang }}">
+
+                    <!-- Suggested Question Pills as HTML Buttons -->
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <button type="submit" name="question" value="What is the adoption process?" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">
+                            "What is the adoption process?"
+                        </button>
+                        <button type="submit" name="question" value="What is my current status?" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">
+                            "What is my current status?"
+                        </button>
+                        <button type="submit" name="question" value="What should I do next?" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">
+                            "What should I do next?"
+                        </button>
+                        <button type="submit" name="question" value="Which verified trusts are available in Madurai?" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">
+                            "Which verified trusts are available in Madurai?"
+                        </button>
+                        <button type="submit" name="question" value="தத்தெடுக்கும் வழிமுறை என்ன?" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;">
+                            "தத்தெடுக்கும் வழிமுறை என்ன?"
+                        </button>
+                    </div>
+
+                    <!-- Input Box -->
+                    <div class="input-group">
+                        <input type="text" name="question" class="form-control" placeholder="Ask any adoption or status question in English or Tamil..." autocomplete="off" required>
+                        <button type="submit" class="btn btn-pink px-4">
+                            <i class="fa-solid fa-paper-plane me-1"></i> Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Safety Rules Banner -->
+        <div class="alert alert-light border small text-muted p-3">
+            <i class="fa-solid fa-shield-halved text-pink me-1"></i> <strong>Trustworthy AI Safety Rules:</strong> The AI Agent provides administrative and process guidance based on your MongoDB application context. It does NOT make legal eligibility decisions, approve/reject applications, or evaluate individual children.
+        </div>
+    </div>
+</div>
+{% endblock %}

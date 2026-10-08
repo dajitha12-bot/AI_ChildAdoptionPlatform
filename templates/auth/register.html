@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Register – Smart Child Adoption Platform{% endblock %}
+
+{% block public_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card-custom shadow-sm p-4">
+                <div class="text-center mb-4">
+                    <div class="card-icon mx-auto mb-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <h4 class="fw-bold">Create an Account</h4>
+                    <p class="text-muted small">Register to start your adoption guidance journey</p>
+                </div>
+
+                <form action="{{ url_for('auth.register') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">I am registering as:</label>
+                        <div class="btn-group w-100 mb-2" role="group">
+                            <a href="{{ url_for('auth.register', role='adopter') }}" class="btn {% if role == 'adopter' %}btn-pink fw-bold{% else %}btn-outline-pink{% endif %}">
+                                <i class="fa-solid fa-user-heart me-1"></i> Prospective Adopter
+                            </a>
+                            <a href="{{ url_for('auth.register', role='trust') }}" class="btn {% if role == 'trust' %}btn-pink fw-bold{% else %}btn-outline-pink{% endif %}">
+                                <i class="fa-solid fa-building-shield me-1"></i> Adoption Trust / Agency
+                            </a>
+                        </div>
+                        <input type="hidden" name="role" value="{{ role or 'adopter' }}">
+                    </div>
+
+
+                    <div class="row g-3">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Full Name / Contact Person</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Ajitha D R" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="user@example.com" required>
+                            <div class="form-text text-muted" style="font-size: 0.75rem;">Used for real-time SMTP notifications.</div>
+                        </div>
+                    </div>
+
+                    <div id="trustFields" style="display: {% if role == 'trust' %}block{% else %}none{% endif %};" class="mb-3 p-3 bg-light rounded">
+                        <h6 class="fw-bold text-dark mb-2">Trust Details</h6>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Official Trust Name</label>
+                            <input type="text" name="trust_name" class="form-control" placeholder="e.g. Hope Adoption Trust">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Operating District / Location</label>
+                            <input type="text" name="location" class="form-control" placeholder="e.g. Madurai, Tamil Nadu">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phone Number</label>
+                            <input type="text" name="phone" class="form-control" placeholder="+91 9876543210" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Preferred Language</label>
+                            <select name="language" class="form-select">
+                                <option value="English">English</option>
+                                <option value="Tamil">Tamil (தமிழ்)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Address</label>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Full residential/office address"></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Confirm Password</label>
+                            <input type="password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-pink w-100 py-2 fs-6 mb-3">
+                        <i class="fa-solid fa-paper-plane me-2"></i> Register Account
+                    </button>
+                </form>
+
+                <div class="text-center border-top pt-3 mt-2">
+                    <p class="small text-muted mb-0">Already registered?</p>
+                    <a href="{{ url_for('auth.login') }}" class="text-pink fw-bold text-decoration-none">
+                        Sign In Here
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

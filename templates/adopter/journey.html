@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}My Adoption Journey – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}My Adoption Journey Timeline{% endblock %}
+
+{% block content %}
+<div class="card-custom mb-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-route text-pink me-2"></i>Application Journey Timeline</h4>
+            <p class="text-muted small mb-0">Track your adoption application progress through each administrative milestone</p>
+        </div>
+        <div>
+            <span class="badge badge-pink fs-6">Request ID: {{ request.request_id if request else 'N/A' }}</span>
+        </div>
+    </div>
+
+    {% set current_stg = journey.current_stage if journey else 'REGISTRATION' %}
+
+    <!-- Visual Stepper Timeline -->
+    <div class="timeline-container my-5">
+        {% for stage_name in JOURNEY_STAGES %}
+            {% set index = loop.index %}
+            {% set active_index = JOURNEY_STAGES.index(current_stg) + 1 if current_stg in JOURNEY_STAGES else 1 %}
+            {% set is_completed = index < active_index %}
+            {% set is_active = index == active_index %}
+
+            <div class="timeline-step {% if is_completed %}completed{% elif is_active %}active{% endif %}">
+                <div class="timeline-node">
+                    {% if is_completed %}
+                        <i class="fa-solid fa-check"></i>
+                    {% elif is_active %}
+                        <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+                    {% else %}
+                        {{ index }}
+                    {% endif %}
+                </div>
+                <div class="timeline-label">
+                    {{ stage_name.replace('_', ' ')|title }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Active Stage Details Box -->
+    <div class="card bg-very-light-pink border-light-pink p-4 mt-4 rounded-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="card-icon bg-pink text-white fs-3">
+                <i class="fa-solid fa-bullseye"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold text-dark mb-1">Current Milestone: <span class="text-pink">{{ current_stg.replace('_', ' ')|title }}</span></h5>
+                <p class="text-secondary small mb-0">
+                    {% if current_stg == 'REGISTRATION' %}
+                        Your account is created. Next step: Fill out your profile and family adoption preferences.
+                    {% elif current_stg == 'PROFILE_COMPLETED' %}
+                        Your profile is ready. Next step: Choose a verified adoption trust from the directory.
+                    {% elif current_stg == 'REQUEST_SENT' or current_stg == 'TRUST_REVIEW' %}
+                        Your request has been submitted to <strong>{{ trust.trust_name if trust else 'your chosen trust' }}</strong> and is under active review. Real-time SMTP email notifications will alert you upon approval.
+                    {% elif current_stg == 'APPROVED' %}
+                        🎉 <strong>APPROVED:</strong> Your request was approved by {{ trust.trust_name if trust else 'the trust' }}. Official verification email has been dispatched.
+                    {% elif current_stg == 'FURTHER_PROCESS' %}
+                        Your application has moved into official document verification and home study phase.
+                    {% elif current_stg == 'COMPLETED' %}
+                        🏆 <strong>Completed:</strong> Application workflow is fully completed in compliance with adoption procedures.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details & Communication Log -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card-custom h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-pink me-2"></i>Application Details</h5>
+            <table class="table table-borderless small">
+                <tr>
+                    <td class="text-muted fw-semibold" style="width: 140px;">Request ID:</td>
+                    <td class="fw-bold text-dark">{{ request.request_id if request else 'Not Created' }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted fw-semibold">Assigned Trust:</td>
+                    <td class="fw-bold text-dark">{{ trust.trust_name if trust else 'Not Selected' }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted fw-semibold">Trust Location:</td>
+                    <td class="text-dark">{{ trust.location if trust else 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td class="text-muted fw-semibold">Application Status:</td>
+                    <td>
+                        <span class="badge {% if request and request.status == 'APPROVED' %}badge-approved{% elif request and request.status == 'TRUST_REVIEW' %}badge-review{% else %}badge-pending{% endif %}">
+                            {{ request.status if request else 'REGISTRATION' }}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-muted fw-semibold">Last Updated:</td>
+                    <td class="text-muted">{{ journey.updated_at[:16].replace('T', ' ') if journey and journey.updated_at else 'N/A' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card-custom h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-envelope-open-text text-pink me-2"></i>Automated Email Notifications Log</h5>
+            <div class="p-3 bg-light rounded border border-light-subtle small">
+                <div class="d-flex align-items-center gap-2 mb-2 text-success">
+                    <i class="fa-solid fa-envelope-circle-check"></i>
+                    <span class="fw-bold">Real-time SMTP Dispatch Active</span>
+                </div>
+                <p class="text-muted mb-0">Whenever the trust handler updates your application status (e.g. from <em>Trust Review</em> to <em>Approved</em>), an email is automatically sent to your registered address: <code>{{ user.email }}</code>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

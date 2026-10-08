@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Monitoring – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Real-Time Platform Monitoring & Audit Logs{% endblock %}
+
+{% block content %}
+<!-- Monitoring Overview Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Total Users</div>
+            <div class="metric-value">{{ total_users }}</div>
+            <div class="small text-muted mt-1">{{ adopter_count }} Adopters • {{ trust_user_count }} Trusts</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">AI Agent Queries</div>
+            <div class="metric-value text-pink">{{ ai_usage_count }}</div>
+            <div class="small text-muted mt-1">GPT-3.5 Agent Conversations</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Total Email Dispatches</div>
+            <div class="metric-value text-success">{{ email_logs_count }}</div>
+            <div class="small text-muted mt-1">{{ email_success_count }} Successful dispatches</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card-custom card-pink-accent text-center p-3">
+            <div class="metric-label">Approved & Completed</div>
+            <div class="metric-value text-primary">{{ req_approved + req_completed }}</div>
+            <div class="small text-muted mt-1">{{ req_approved }} Approved • {{ req_completed }} Finalized</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Email Dispatches Log Table -->
+    <div class="col-lg-6">
+        <div class="card-custom h-100 p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-envelope-circle-check text-pink me-2"></i>Real-Time Email Notification Dispatches</h5>
+            {% if recent_email_logs %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Recipient</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Sent Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for el in recent_email_logs %}
+                                <tr>
+                                    <td><code>{{ el.email }}</code></td>
+                                    <td><span class="badge bg-light text-dark border">{{ el.email_type }}</span></td>
+                                    <td>
+                                        <span class="badge {% if el.status in ['SENT', 'SENT_SIMULATED'] %}badge-approved{% else %}badge-rejected{% endif %}">
+                                            {{ el.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted" style="font-size: 0.75rem;">{{ el.sent_at[:16].replace('T', ' ') if el.sent_at else 'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted small py-3 text-center mb-0">No email dispatches logged yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- AI Agent Audit Log Table -->
+    <div class="col-lg-6">
+        <div class="card-custom h-100 p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-robot text-pink me-2"></i>AI Agent Query Logs</h5>
+            {% if recent_ai_queries %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User Query</th>
+                                <th>Language</th>
+                                <th>Model Engine</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ai_q in recent_ai_queries %}
+                                <tr>
+                                    <td class="fw-semibold text-truncate" style="max-width: 200px;" title="{{ ai_q.question }}">{{ ai_q.question }}</td>
+                                    <td><span class="badge badge-pink">{{ ai_q.language }}</span></td>
+                                    <td><code class="small text-muted">{{ ai_q.model if ai_q.model else 'gpt-3.5-turbo' }}</code></td>
+                                    <td class="text-muted" style="font-size: 0.75rem;">{{ ai_q.created_at[:16].replace('T', ' ') if ai_q.created_at else 'N/A' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted small py-3 text-center mb-0">No AI agent queries logged yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

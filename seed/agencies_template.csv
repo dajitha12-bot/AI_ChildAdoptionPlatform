@@ -1,0 +1,2 @@
+agency_name,state,district,city,public_address,phone,email,website,languages,agency_type,verified,verification_source,source_url,last_verified,status
+"Example Adoption Trust","Tamil Nadu","Madurai","Madurai","12 Main Street, KK Nagar, Madurai - 625020","+91 9443123456","contact@exampleadoption.org","https://exampleadoption.org","Tamil, English","Specialized Adoption Agency (SAA)",true,"State Adoption Resource Agency (SARA)","https://sara.tn.gov.in","2026-09-01T00:00:00Z","ACTIVE"

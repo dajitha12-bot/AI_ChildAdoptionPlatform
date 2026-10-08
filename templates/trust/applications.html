@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Application Management – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Application Journey Management{% endblock %}
+
+{% block content %}
+<div class="card-custom mb-4 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bars-progress text-pink me-2"></i>Active Applications & Stage Management</h4>
+            <p class="text-muted small mb-0">Update applicant journey milestones (Pending, Under Review, Approved, Further Process, Completed)</p>
+        </div>
+    </div>
+
+    {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Applicant Name</th>
+                        <th>Current Status</th>
+                        <th>Journey Stage</th>
+                        <th>Update Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app_req in applications %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ app_req.request_id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ app_req.adopter.name if app_req.adopter else 'Adopter' }}</div>
+                                <div class="small text-muted"><code>{{ app_req.adopter.email if app_req.adopter else '' }}</code></div>
+                            </td>
+                            <td>
+                                <span class="badge {% if app_req.status == 'APPROVED' %}badge-approved{% elif app_req.status == 'COMPLETED' %}badge-approved{% elif app_req.status == 'FURTHER_PROCESS' %}badge-pink{% else %}badge-review{% endif %}">
+                                    {{ app_req.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-pink small">
+                                    {{ app_req.journey.current_stage if app_req.journey else app_req.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <form action="{{ url_for('trust.request_action', req_id=app_req._id) }}" method="POST" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="action" value="status_update">
+                                    <select name="new_status" class="form-select form-select-sm" style="width: 170px;">
+                                        <option value="TRUST_REVIEW" {% if app_req.status == 'TRUST_REVIEW' %}selected{% endif %}>Under Review</option>
+                                        <option value="APPROVED" {% if app_req.status == 'APPROVED' %}selected{% endif %}>Approved</option>
+                                        <option value="FURTHER_PROCESS" {% if app_req.status == 'FURTHER_PROCESS' %}selected{% endif %}>Further Process</option>
+                                        <option value="COMPLETED" {% if app_req.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-pink">
+                                        <i class="fa-solid fa-arrows-rotate"></i> Update
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted py-4 text-center mb-0">No active applications to manage.</p>
+    {% endif %}
+</div>
+{% endblock %}

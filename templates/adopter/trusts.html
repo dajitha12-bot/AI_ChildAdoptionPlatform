@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Verified Adoption Agencies – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}India-Wide Verified Adoption Agencies Directory{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+
+    <!-- Page Introduction Banner -->
+    <div class="alert alert-light border-start border-pink border-4 mb-4 shadow-sm bg-white p-3 rounded-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid fa-shield-heart text-pink fs-2"></i>
+            <div>
+                <div class="fw-bold text-dark fs-6">Verified Adoption Agencies Directory (Official Public Records)</div>
+                <div class="small text-muted">Browse authorized Specialized Adoption Agencies (SAA) across states in India. prospective adopters select an authorized agency to submit their adoption application. All processes, search, application forms, and status tracking occur inside this page.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 7 & 9: LIVE APPLICATION STATUS & JOURNEY (SAME PAGE) -->
+    {% if application %}
+    <div id="applicationStatusSection" class="card-custom mb-4 p-4 border-pink shadow-sm" style="background-color: #FFF7FA;">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+            <div>
+                <span class="badge bg-pink text-dark mb-1 px-3 py-1 fs-6"><i class="fa-solid fa-circle-check me-1"></i>APPLICATION ACTIVE</span>
+                <h4 class="fw-bold text-dark mb-0"><i class="fa-solid fa-bars-progress text-pink me-2"></i>📊 APPLICATION JOURNEY</h4>
+            </div>
+            <div class="text-end">
+                <div class="small text-muted">Application ID:</div>
+                <span class="badge bg-dark text-white font-monospace fs-6 px-3 py-1">{{ application.application_id }}</span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 h-100">
+                    <span class="text-muted small d-block">Selected Adoption Agency:</span>
+                    <strong class="text-dark">{{ applied_trust.trust_name if applied_trust else application.trust_name or 'Verified SAA' }}</strong>
+                    <div class="small text-muted mt-1"><i class="fa-solid fa-location-dot text-pink me-1"></i>{{ applied_trust.city if applied_trust else application.city or 'India' }}, {{ applied_trust.state if applied_trust else application.state or '' }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 h-100">
+                    <span class="text-muted small d-block">Applicant Email:</span>
+                    <strong class="text-dark"><code>{{ application.applicant_email or user.email }}</code></strong>
+                    <div class="small text-pink mt-1"><i class="fa-solid fa-paper-plane me-1"></i>Confirmation email dispatched</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 h-100">
+                    <span class="text-muted small d-block">Current Status:</span>
+                    {% set st = application.status or 'SUBMITTED' %}
+                    {% if st == 'SUBMITTED' %}
+                        <span class="badge bg-warning text-dark px-3 py-2 mt-1"><i class="fa-solid fa-clock me-1"></i>🟡 SUBMITTED</span>
+                    {% elif st == 'UNDER_REVIEW' or st == 'TRUST_REVIEW' %}
+                        <span class="badge bg-info text-dark px-3 py-2 mt-1"><i class="fa-solid fa-magnifying-glass me-1"></i>🔵 UNDER REVIEW</span>
+                    {% elif st == 'APPROVED' %}
+                        <span class="badge bg-success text-white px-3 py-2 mt-1"><i class="fa-solid fa-circle-check me-1"></i>🟢 APPROVED</span>
+                    {% elif st == 'REJECTED' %}
+                        <span class="badge bg-danger text-white px-3 py-2 mt-1"><i class="fa-solid fa-circle-xmark me-1"></i>🔴 REJECTED</span>
+                    {% elif st == 'FURTHER_PROCESS' %}
+                        <span class="badge bg-primary text-white px-3 py-2 mt-1"><i class="fa-solid fa-user-check me-1"></i>🔵 FURTHER PROCESS</span>
+                    {% elif st == 'COMPLETED' %}
+                        <span class="badge bg-dark text-white px-3 py-2 mt-1"><i class="fa-solid fa-flag-checkered me-1"></i>🏁 COMPLETED</span>
+                    {% else %}
+                        <span class="badge bg-secondary text-white px-3 py-2 mt-1">{{ st }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white border rounded-3 h-100">
+                    <span class="text-muted small d-block">Submission & Update:</span>
+                    <div class="small text-dark fw-bold mt-1">Submitted: {{ application.created_at[:10] if application.created_at else 'Recently' }}</div>
+                    <div class="small text-muted">Updated: {{ application.updated_at[:10] if application.updated_at else 'Recently' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual 5-Stage Journey Progress Pipeline -->
+        <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-route text-pink me-2"></i>Stage Progress:</h6>
+        <div class="row text-center g-2 mb-3">
+            {% set stage = journey.current_stage if journey else application.status %}
+            <!-- Stage 1: Submitted -->
+            <div class="col">
+                <div class="p-2 rounded-3 border bg-white shadow-sm h-100">
+                    <div class="fs-4 text-success"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="fw-bold small text-dark mt-1">1. Submitted</div>
+                    <span class="badge bg-light text-muted" style="font-size: 0.65rem;">Completed</span>
+                </div>
+            </div>
+
+            <!-- Stage 2: Under Review -->
+            <div class="col">
+                <div class="p-2 rounded-3 border {% if stage in ['UNDER_REVIEW', 'TRUST_REVIEW', 'APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}bg-white shadow-sm{% else %}bg-light opacity-75{% endif %} h-100">
+                    <div class="fs-4 {% if stage in ['UNDER_REVIEW', 'TRUST_REVIEW'] %}text-warning{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}text-success{% else %}text-muted{% endif %}">
+                        <i class="fa-solid {% if stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}fa-circle-check{% elif stage in ['UNDER_REVIEW', 'TRUST_REVIEW'] %}fa-spinner fa-spin{% else %}fa-circle-notch{% endif %}"></i>
+                    </div>
+                    <div class="fw-bold small text-dark mt-1">2. Under Review</div>
+                    <span class="badge {% if stage in ['UNDER_REVIEW', 'TRUST_REVIEW'] %}bg-warning text-dark{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}bg-light text-muted{% else %}bg-secondary text-white{% endif %}" style="font-size: 0.65rem;">
+                        {% if stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}Passed{% elif stage in ['UNDER_REVIEW', 'TRUST_REVIEW'] %}Active{% else %}Pending{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Stage 3: Approved / Rejected -->
+            <div class="col">
+                <div class="p-2 rounded-3 border {% if stage in ['APPROVED', 'REJECTED', 'FURTHER_PROCESS', 'COMPLETED'] %}bg-white shadow-sm{% else %}bg-light opacity-75{% endif %} h-100">
+                    <div class="fs-4 {% if stage == 'REJECTED' %}text-danger{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}text-success{% else %}text-muted{% endif %}">
+                        <i class="fa-solid {% if stage == 'REJECTED' %}fa-circle-xmark{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}fa-circle-check{% else %}fa-circle-notch{% endif %}"></i>
+                    </div>
+                    <div class="fw-bold small text-dark mt-1">3. Approval</div>
+                    <span class="badge {% if stage == 'REJECTED' %}bg-danger text-white{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}bg-success text-white{% else %}bg-secondary text-white{% endif %}" style="font-size: 0.65rem;">
+                        {% if stage == 'REJECTED' %}Rejected{% elif stage in ['APPROVED', 'FURTHER_PROCESS', 'COMPLETED'] %}Approved{% else %}Pending{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Stage 4: Further Process -->
+            <div class="col">
+                <div class="p-2 rounded-3 border {% if stage in ['FURTHER_PROCESS', 'COMPLETED'] %}bg-white shadow-sm{% else %}bg-light opacity-75{% endif %} h-100">
+                    <div class="fs-4 {% if stage == 'FURTHER_PROCESS' %}text-primary{% elif stage == 'COMPLETED' %}text-success{% else %}text-muted{% endif %}">
+                        <i class="fa-solid {% if stage == 'COMPLETED' %}fa-circle-check{% elif stage == 'FURTHER_PROCESS' %}fa-spinner fa-spin{% else %}fa-circle-notch{% endif %}"></i>
+                    </div>
+                    <div class="fw-bold small text-dark mt-1">4. Further Process</div>
+                    <span class="badge {% if stage == 'FURTHER_PROCESS' %}bg-primary text-white{% elif stage == 'COMPLETED' %}bg-light text-muted{% else %}bg-secondary text-white{% endif %}" style="font-size: 0.65rem;">
+                        {% if stage == 'COMPLETED' %}Passed{% elif stage == 'FURTHER_PROCESS' %}In Progress{% else %}Pending{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Stage 5: Completed -->
+            <div class="col">
+                <div class="p-2 rounded-3 border {% if stage == 'COMPLETED' %}bg-white shadow-sm{% else %}bg-light opacity-75{% endif %} h-100">
+                    <div class="fs-4 {% if stage == 'COMPLETED' %}text-success{% else %}text-muted{% endif %}">
+                        <i class="fa-solid {% if stage == 'COMPLETED' %}fa-flag-checkered{% else %}fa-circle-notch{% endif %}"></i>
+                    </div>
+                    <div class="fw-bold small text-dark mt-1">5. Completed</div>
+                    <span class="badge {% if stage == 'COMPLETED' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}" style="font-size: 0.65rem;">
+                        {% if stage == 'COMPLETED' %}Completed{% else %}Pending{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submitted Documents Reference -->
+        {% if application.documents %}
+        <div class="pt-3 border-top">
+            <h6 class="fw-bold text-dark small mb-2"><i class="fa-solid fa-file-shield text-pink me-1"></i>Uploaded Documents (Stored Securely):</h6>
+            <div class="d-flex flex-wrap gap-2">
+                {% for doc in application.documents %}
+                    <a href="{{ url_for('adopter.view_document', app_id=application.application_id, doc_idx=loop.index0) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-1 px-2 style-doc-link">
+                        <i class="fa-solid fa-file-pdf text-pink me-1"></i>{{ doc.document_type }}: <code>{{ doc.file_name }}</code>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- SECTION 1: AGENCY SEARCH & FILTERS -->
+    <div class="card-custom mb-4 p-4 shadow-sm bg-white">
+        <div class="d-flex align-items-center mb-3">
+            <i class="fa-solid fa-magnifying-glass-location text-pink fs-4 me-2"></i>
+            <h5 class="fw-bold text-dark mb-0">Search & Filter Verified Adoption Agencies</h5>
+        </div>
+        <form action="{{ url_for('adopter.verified_trusts') }}" method="GET" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">State</label>
+                <select name="state" class="form-select border-pink-focus">
+                    <option value="">Tamil Nadu ▼</option>
+                    {% for st in available_states %}
+                        <option value="{{ st }}" {% if request.args.get('state') == st or (not request.args.get('state') and st == 'Tamil Nadu') %}selected{% endif %}>{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">District</label>
+                <select name="district" class="form-select">
+                    <option value="">Madurai ▼</option>
+                    {% for dist in available_districts %}
+                        <option value="{{ dist }}" {% if request.args.get('district') == dist %}selected{% endif %}>{{ dist }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">City</label>
+                <select name="city" class="form-select">
+                    <option value="">Madurai ▼</option>
+                    {% for c in available_cities %}
+                        <option value="{{ c }}" {% if request.args.get('city') == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">Language</label>
+                <select name="language" class="form-select">
+                    <option value="">Tamil ▼</option>
+                    <option value="Tamil" {% if request.args.get('language') == 'Tamil' %}selected{% endif %}>Tamil (தமிழ்)</option>
+                    <option value="English" {% if request.args.get('language') == 'English' %}selected{% endif %}>English</option>
+                    <option value="Hindi" {% if request.args.get('language') == 'Hindi' %}selected{% endif %}>Hindi</option>
+                    <option value="Marathi" {% if request.args.get('language') == 'Marathi' %}selected{% endif %}>Marathi</option>
+                    <option value="Malayalam" {% if request.args.get('language') == 'Malayalam' %}selected{% endif %}>Malayalam</option>
+                    <option value="Kannada" {% if request.args.get('language') == 'Kannada' %}selected{% endif %}>Kannada</option>
+                    <option value="Telugu" {% if request.args.get('language') == 'Telugu' %}selected{% endif %}>Telugu</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">Agency Type</label>
+                <select name="agency_type" class="form-select">
+                    <option value="">Specialized Adoption Agency ▼</option>
+                    <option value="Specialized Adoption Agency (SAA)" {% if request.args.get('agency_type') == 'Specialized Adoption Agency (SAA)' %}selected{% endif %}>Specialized Adoption Agency (SAA)</option>
+                    <option value="Child Care Institution (CCI)" {% if request.args.get('agency_type') == 'Child Care Institution (CCI)' %}selected{% endif %}>Child Care Institution (CCI)</option>
+                    <option value="State Adoption Resource Agency (SARA)" {% if request.args.get('agency_type') == 'State Adoption Resource Agency (SARA)' %}selected{% endif %}>State Adoption Resource Agency (SARA)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-dark">Search Keyword</label>
+                <input type="text" name="search" class="form-control" placeholder="Search trust..." value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a href="{{ url_for('adopter.verified_trusts') }}" class="btn btn-outline-secondary px-4">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                </a>
+                <button type="submit" class="btn btn-pink px-4 py-2 fw-bold">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> SEARCH
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SECTION 2: AGENCY RESULTS GRID -->
+    <div class="row g-4 mb-4">
+        {% if trusts %}
+            {% for trust in trusts %}
+                {% set is_already_applied = (application and application.trust_id == trust._id) %}
+                {% set is_target_apply = (apply_trust_id == trust._id) %}
+                
+                <div class="col-md-6 col-lg-4" id="agencyCard{{ trust._id }}">
+                    <div class="card-custom card-pink-accent h-100 d-flex flex-column justify-content-between p-4 bg-white rounded-3 shadow-sm border {% if is_already_applied %}border-pink bg-very-light-pink{% endif %}">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                                <h5 class="fw-bold text-dark mb-0">{{ trust.trust_name }}</h5>
+                                <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.7rem;">
+                                    <i class="fa-solid fa-circle-check me-1"></i>✓ Verified
+                                </span>
+                            </div>
+
+                            <div class="mb-2">
+                                <span class="text-muted small"><i class="fa-solid fa-location-dot text-pink me-1"></i><strong>{{ trust.city or trust.district }}, {{ trust.state }}</strong></span>
+                            </div>
+
+                            <div class="mb-2">
+                                <span class="badge bg-light text-dark border" style="font-size: 0.75rem;">{{ trust.agency_type or 'Specialized Adoption Agency' }}</span>
+                            </div>
+
+                            <div class="small text-muted mb-3 border-top border-bottom py-2">
+                                <div class="mb-1"><i class="fa-solid fa-language text-pink me-2"></i><strong>Languages:</strong> {{ trust.languages|join(' • ') if trust.languages is iterable and trust.languages is not string else trust.languages }}</div>
+                                <div class="mb-1"><i class="fa-solid fa-building-columns text-pink me-2"></i><strong>Source:</strong> {{ trust.verification_source or 'Official Source' }}</div>
+                                {% if trust.last_verified %}
+                                    <div><i class="fa-solid fa-calendar-check text-pink me-2"></i><strong>Last Verified:</strong> {{ trust.last_verified[:10] }}</div>
+                                {% endif %}
+                            </div>
+
+                            {% if trust.address %}
+                                <p class="small text-secondary mb-3"><i class="fa-solid fa-map-pin me-1"></i>{{ trust.address }}</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Button Action: Apply To This Agency (Pure HTML Expand via Details/Summary) -->
+                        <div class="pt-3 border-top">
+                            {% if is_already_applied %}
+                                <a href="#applicationStatusSection" class="btn btn-sm btn-outline-pink w-100 fw-bold">
+                                    <i class="fa-solid fa-check-double me-1"></i> ✓ APPLIED (VIEW JOURNEY)
+                                </a>
+                            {% else %}
+                                <details {% if is_target_apply %}open{% endif %}>
+                                    <summary class="btn btn-pink btn-sm w-100 fw-bold py-2 list-unstyled text-center">
+                                        <i class="fa-solid fa-paper-plane me-1"></i> APPLY TO THIS AGENCY
+                                    </summary>
+
+                                    <!-- SECTION 3: APPLY TO AGENCY FORM (NATIVE HTML EXPAND) -->
+                                    <div class="mt-3 p-4 card-custom border-pink shadow-lg rounded-3" style="background-color: #FFF7FA;">
+                                        <div class="border-bottom pb-3 mb-3">
+                                            <h4 class="fw-bold text-dark mb-1"><i class="fa-solid fa-pen-to-square text-pink me-2"></i>📝 ADOPTION APPLICATION</h4>
+                                            <div class="text-muted small">Selected Agency: <strong class="text-dark">{{ trust.trust_name }}</strong> | Location: <strong>{{ trust.city or trust.district }}, {{ trust.state }}</strong></div>
+                                        </div>
+
+                                        <form action="{{ url_for('adopter.apply_agency') }}" method="POST" enctype="multipart/form-data">
+                                            <input type="hidden" name="trust_id" value="{{ trust._id }}">
+
+                                            <!-- APPLICANT DETAILS -->
+                                            <div class="card bg-white p-3 border mb-3 rounded-3">
+                                                <h6 class="fw-bold text-pink border-bottom pb-2 mb-3"><i class="fa-solid fa-user me-2"></i>APPLICANT DETAILS</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Full Name *</label>
+                                                        <input type="text" name="applicant_name" class="form-control" value="{{ user.name or '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Email Address *</label>
+                                                        <input type="email" name="applicant_email" class="form-control" value="{{ user.email or '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Phone Number *</label>
+                                                        <input type="tel" name="phone" class="form-control" value="{{ user.phone or '' }}" placeholder="e.g. 9876543210" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label small fw-bold">Date of Birth *</label>
+                                                        <input type="date" name="date_of_birth" class="form-control" required>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <label class="form-label small fw-bold">Address *</label>
+                                                        <input type="text" name="address" class="form-control" value="{{ user.address or '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">State *</label>
+                                                        <input type="text" name="state" class="form-control" value="{{ trust.state or 'Tamil Nadu' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">District *</label>
+                                                        <input type="text" name="district" class="form-control" value="{{ trust.district or trust.city }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">City *</label>
+                                                        <input type="text" name="city" class="form-control" value="{{ trust.city or trust.district }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Preferred Language *</label>
+                                                        <select name="language" class="form-select" required>
+                                                            <option value="Tamil" {% if user.language == 'Tamil' %}selected{% endif %}>Tamil</option>
+                                                            <option value="English" {% if user.language == 'English' %}selected{% endif %}>English</option>
+                                                            <option value="Hindi">Hindi</option>
+                                                            <option value="Marathi">Marathi</option>
+                                                            <option value="Malayalam">Malayalam</option>
+                                                            <option value="Kannada">Kannada</option>
+                                                            <option value="Telugu">Telugu</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- FAMILY / APPLICATION DETAILS -->
+                                            <div class="card bg-white p-3 border mb-3 rounded-3">
+                                                <h6 class="fw-bold text-pink border-bottom pb-2 mb-3"><i class="fa-solid fa-users me-2"></i>FAMILY / APPLICATION DETAILS</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Family Status</label>
+                                                        <select name="family_status" class="form-select">
+                                                            <option value="Married">Married Couple</option>
+                                                            <option value="Single Female">Single Female</option>
+                                                            <option value="Single Male">Single Male</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Number of Family Members</label>
+                                                        <input type="number" name="family_members" class="form-control" min="1" value="2">
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold">Occupation</label>
+                                                        <input type="text" name="occupation" class="form-control" placeholder="e.g. Software Engineer, Doctor, Business">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Basic Application Preferences</label>
+                                                        <textarea name="preferences" class="form-control" rows="2" placeholder="e.g. Preferred child age group or general guidance preferences..."></textarea>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Additional Remarks</label>
+                                                        <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Any special notes for the adoption agency..."></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- DOCUMENT UPLOAD SECTION -->
+                                            <div class="card bg-white p-3 border mb-4 rounded-3">
+                                                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                                    <h6 class="fw-bold text-pink mb-0"><i class="fa-solid fa-folder-open me-2"></i>REQUIRED DOCUMENT UPLOAD</h6>
+                                                    <span class="badge bg-light text-muted border">Allowed formats: PDF, JPG, JPEG, PNG | Max 5MB</span>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Identity Proof * <span class="text-muted font-normal">(PAN / Aadhaar)</span></label>
+                                                        <input type="file" name="identity_proof" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Address Proof * <span class="text-muted font-normal">(Passport / Utility Bill)</span></label>
+                                                        <input type="file" name="address_proof" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Supporting Document <span class="text-muted font-normal">(Income Tax Return)</span></label>
+                                                        <input type="file" name="supporting_doc" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small fw-bold">Additional Document <span class="text-muted font-normal">(Medical Fitness Cert)</span></label>
+                                                        <input type="file" name="additional_doc" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Submit Button -->
+                                            <div class="d-flex justify-content-end gap-3">
+                                                <button type="submit" class="btn btn-pink px-5 py-2 fw-bold shadow-sm">
+                                                    <i class="fa-solid fa-paper-plane me-1"></i> SUBMIT APPLICATION
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </details>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty Results Banner -->
+            <div class="col-12 text-center py-5 card-custom bg-very-light-pink border-light-pink">
+                <i class="fa-solid fa-building-circle-xmark fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="fw-bold text-dark">No verified agencies match your selected location and language.</h5>
+                <p class="text-muted max-w-600 mx-auto">Try another location or check official adoption resources. You can clear your search filters or browse agencies by state.</p>
+                <a href="{{ url_for('adopter.verified_trusts') }}" class="btn btn-pink mt-2">
+                    <i class="fa-solid fa-rotate-left me-1"></i> Reset All Search Filters
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
