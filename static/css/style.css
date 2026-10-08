@@ -1094,3 +1094,116 @@ h1, h2, h3, h4, h5, h6 {
         flex: 0 0 100%;
     }
 }
+
+
+/* ==========================================
+   SECTION 19 REUSABLE CLASS ALIASES
+   ========================================== */
+.dashboard-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 12px rgba(232, 160, 191, 0.08);
+}
+
+.agency-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.agency-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(232, 160, 191, 0.2);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.35em 0.75em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background-color: #D1FAE5;
+    color: #065F46;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35em 0.75em;
+    border-radius: 12px;
+}
+
+.primary-btn {
+    background-color: var(--primary-pink);
+    color: #FFFFFF;
+    font-weight: 600;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primary-btn:hover {
+    background-color: var(--primary-pink-hover);
+    color: #FFFFFF;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--sidebar-bg);
+    color: #FFFFFF;
+}
+
+.page-header {
+    margin-bottom: 1.75rem;
+}
+
+.section-card {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-card {
+    background-color: var(--very-light-pink);
+    border: 1px solid var(--light-pink);
+    border-radius: 14px;
+    padding: 1.25rem;
+    color: var(--dark-pink);
+}

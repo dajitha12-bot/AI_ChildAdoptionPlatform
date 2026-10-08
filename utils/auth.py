@@ -18,6 +18,22 @@ def login_user_session(user: dict):
     session['user_email'] = user.get('email', '')
     session['role'] = user.get('role', '')
 
+    if user.get('role') == 'trust':
+        user_id_str = str(user['_id'])
+        trust_doc = db.trusts.find_one({'user_id': user_id_str})
+        if not trust_doc:
+            trust_doc = db.trusts.find_one({'email': user.get('email')})
+        if not trust_doc and user.get('trust_id'):
+            try:
+                trust_doc = db.trusts.find_one({'_id': ObjectId(user.get('trust_id'))})
+            except Exception:
+                trust_doc = db.trusts.find_one({'_id': user.get('trust_id')})
+
+        if trust_doc:
+            session['trust_id'] = str(trust_doc['_id'])
+        elif user.get('trust_id'):
+            session['trust_id'] = str(user.get('trust_id'))
+
 def logout_user_session():
     session.clear()
 

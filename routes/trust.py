@@ -156,8 +156,11 @@ def requests_list():
 def request_action(req_id):
     user = get_current_user()
     trust = _get_trust_doc(user)
+    trust_id = session.get('trust_id') or (str(trust['_id']) if trust else None)
+    
     action = request.form.get('action', '').lower() # approve / reject / status_update
     new_status = request.form.get('new_status', 'APPROVED')
+    remarks = request.form.get('remarks', '').strip()
 
     try:
         req = db.adoption_requests.find_one({'_id': ObjectId(req_id)})
@@ -166,6 +169,11 @@ def request_action(req_id):
 
     if not req:
         flash('Adoption request not found.', 'danger')
+        return redirect(url_for('trust.requests_list'))
+
+    # CRITICAL SECURITY RULE: Verify application belongs to the logged-in trust
+    if not trust_id or str(req.get('trust_id')) != trust_id:
+        flash('Unauthorized access: You are not authorized to access or process this application.', 'danger')
         return redirect(url_for('trust.requests_list'))
 
     adopter_id = req.get('adopter_id')
@@ -192,6 +200,8 @@ def request_action(req_id):
     # Update MongoDB request status
     now_iso = datetime.now(timezone.utc).isoformat()
     update_dict = {'status': status_to_set, 'updated_at': now_iso}
+    if remarks:
+        update_dict['remarks'] = remarks
     if status_to_set == 'APPROVED':
         update_dict['approved_at'] = now_iso
 
