@@ -177,6 +177,24 @@ def seed():
             ins_t_id = db.trusts.insert_one(trust_doc).inserted_id
             trust_id_map[t_data['trust_name']] = str(ins_t_id)
 
+        # Seed trust account notifications
+        db.notifications.insert_many([
+            {
+                'user_id': str(t_user_id),
+                'message': f"Welcome to Smart Adoption Platform! Verification status: ACTIVE for {t_data['trust_name']}.",
+                'type': 'verification',
+                'is_read': False,
+                'created_at': now_iso
+            },
+            {
+                'user_id': str(t_user_id),
+                'message': f"New adopter application received for {t_data['trust_name']}.",
+                'type': 'application',
+                'is_read': False,
+                'created_at': now_iso
+            }
+        ])
+
         print(f"Mapped Trust User Account: {t_data['trust_name']} ({t_data['email']})")
 
     # 4. Primary Demo Adopter Account

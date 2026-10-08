@@ -1,68 +1,233 @@
 {% extends "base.html" %}
 
-{% block title %}Application Management – Smart Child Adoption Platform{% endblock %}
-{% block header_title %}Application Journey Management{% endblock %}
+{% block title %}Applications & Child Matching – Smart Child Adoption Platform{% endblock %}
+{% block header_title %}Applications & Child-Family Matching Portal{% endblock %}
 
 {% block content %}
-<div class="card-custom mb-4 p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h4 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-bars-progress text-pink me-2"></i>Active Applications & Stage Management</h4>
-            <p class="text-muted small mb-0">Update applicant journey milestones (Pending, Under Review, Approved, Further Process, Completed)</p>
+<div class="container-fluid px-0">
+
+    <!-- Page Header Banner -->
+    <div class="alert alert-light border-start border-pink border-4 mb-4 shadow-sm bg-white p-3 rounded-3">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fa-solid fa-heart-circle-check text-pink fs-2"></i>
+            <div>
+                <div class="fw-bold text-dark fs-6">Trust Applications & Child-Family Compatibility Matching Engine</div>
+                <div class="small text-muted">Review incoming adopter applications, approve family profiles, track journey milestones, manage authorized child profiles, and authorize AI-assisted child-family compatibility matches.</div>
+            </div>
         </div>
     </div>
 
-    {% if applications %}
+    <!-- SECTION 1: INCOMING ADOPTER APPLICATIONS & JOURNEY STAGE MANAGEMENT -->
+    <div class="card-custom mb-4 p-4 bg-white rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-bars-progress text-pink me-2"></i>Adopter Applications & Stage Management</h5>
+                <p class="text-muted small mb-0">Review adopter applications and update journey milestones (Under Review, Approved, Further Process, Completed)</p>
+            </div>
+            <span class="badge bg-pink text-dark fs-6 px-3 py-2"><i class="fa-solid fa-folder-open me-1"></i>{{ applications|length }} Applications</span>
+        </div>
+
+        {% if applications %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Applicant Details</th>
+                            <th>Family Preferences</th>
+                            <th>Current Status</th>
+                            <th>Journey Stage</th>
+                            <th>Update Status & Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app_req in applications %}
+                            <tr>
+                                <td class="fw-bold text-dark font-monospace">{{ app_req.request_id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ app_req.adopter.name if app_req.adopter else app_req.applicant_name or 'Adopter' }}</div>
+                                    <div class="small text-muted"><i class="fa-solid fa-envelope text-pink me-1"></i><code>{{ app_req.adopter.email if app_req.adopter else app_req.applicant_email or '' }}</code></div>
+                                    <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>{{ app_req.adopter.phone if app_req.adopter else 'N/A' }}</div>
+                                </td>
+                                <td>
+                                    <div class="small"><strong>Status:</strong> {{ app_req.adopter.family_info.marital_status if app_req.adopter and app_req.adopter.family_info else 'Married' }}</div>
+                                    <div class="small"><strong>Income:</strong> {{ app_req.adopter.family_info.annual_income if app_req.adopter and app_req.adopter.family_info else 'Standard' }}</div>
+                                    <div class="small text-pink"><strong>Pref Age:</strong> {{ app_req.application_details.preferred_age_group if app_req.application_details else '0-2 years' }}</div>
+                                </td>
+                                <td>
+                                    {% set st = app_req.status or 'SUBMITTED' %}
+                                    {% if st == 'APPROVED' %}
+                                        <span class="badge bg-success text-white px-3 py-2"><i class="fa-solid fa-circle-check me-1"></i>APPROVED</span>
+                                    {% elif st == 'REJECTED' %}
+                                        <span class="badge bg-danger text-white px-3 py-2"><i class="fa-solid fa-circle-xmark me-1"></i>REJECTED</span>
+                                    {% elif st in ['TRUST_REVIEW', 'UNDER_REVIEW'] %}
+                                        <span class="badge bg-warning text-dark px-3 py-2"><i class="fa-solid fa-magnifying-glass me-1"></i>UNDER REVIEW</span>
+                                    {% elif st == 'FURTHER_PROCESS' %}
+                                        <span class="badge bg-primary text-white px-3 py-2"><i class="fa-solid fa-user-check me-1"></i>FURTHER PROCESS</span>
+                                    {% elif st == 'COMPLETED' %}
+                                        <span class="badge bg-dark text-white px-3 py-2"><i class="fa-solid fa-flag-checkered me-1"></i>COMPLETED</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary text-white px-3 py-2">{{ st }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark small">
+                                        {{ app_req.journey.current_stage if app_req.journey else app_req.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('trust.request_action', req_id=app_req._id) }}" method="POST" class="d-flex flex-column gap-1">
+                                        <input type="hidden" name="action" value="status_update">
+                                        <div class="input-group input-group-sm">
+                                            <select name="new_status" class="form-select form-select-sm border-pink-focus">
+                                                <option value="TRUST_REVIEW" {% if app_req.status in ['TRUST_REVIEW', 'UNDER_REVIEW'] %}selected{% endif %}>Under Review</option>
+                                                <option value="APPROVED" {% if app_req.status == 'APPROVED' %}selected{% endif %}>Approve Application</option>
+                                                <option value="FURTHER_PROCESS" {% if app_req.status == 'FURTHER_PROCESS' %}selected{% endif %}>Further Process</option>
+                                                <option value="COMPLETED" {% if app_req.status == 'COMPLETED' %}selected{% endif %}>Complete Process</option>
+                                                <option value="REJECTED" {% if app_req.status == 'REJECTED' %}selected{% endif %}>Reject Request</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-pink fw-bold">
+                                                <i class="fa-solid fa-rotate me-1"></i> Update
+                                            </button>
+                                        </div>
+                                        <input type="text" name="remarks" class="form-control form-control-sm" placeholder="Add remarks..." value="{{ app_req.remarks or '' }}">
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-inbox fs-2 mb-2 d-block text-pink opacity-50"></i>
+                No active applications submitted to this trust yet.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECTION 2: AUTHORIZED AVAILABLE CHILDREN PROFILES -->
+    <div class="card-custom mb-4 p-4 bg-white rounded-3 shadow-sm">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-child text-pink me-2"></i>Authorized Available Children (Child Profiles)</h5>
+                <p class="text-muted small mb-0">Authorized children profiles registered under this agency available for prospective family matching</p>
+            </div>
+            <span class="badge bg-success text-white fs-6 px-3 py-2"><i class="fa-solid fa-child-reaching me-1"></i>{{ available_children|length }} Available</span>
+        </div>
+
+        {% if available_children %}
+            <div class="row g-3">
+                {% for child in available_children %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-baby text-pink me-1"></i>{{ child.child_name }}</h6>
+                                <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.7rem;">AVAILABLE</span>
+                            </div>
+                            <div class="small text-muted mb-1"><i class="fa-solid fa-id-badge text-pink me-1"></i>Child ID: <strong>{{ child.child_id }}</strong></div>
+                            <div class="small text-muted mb-1"><i class="fa-solid fa-cake-candles me-1"></i>Age Group: <strong>{{ child.age_range }}</strong> | Gender: <strong>{{ child.gender }}</strong></div>
+                            <div class="small text-muted mb-1"><i class="fa-solid fa-location-dot me-1"></i>Region: <strong>{{ child.location_region }}</strong></div>
+                            <div class="small text-muted"><i class="fa-solid fa-hand-holding-heart me-1"></i>Category: {{ child.authorized_support_category }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-child-circle-exclamation fs-2 mb-2 d-block text-pink opacity-50"></i>
+                No available child profiles currently registered for this agency.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECTION 3: AI-ASSISTED CHILD-FAMILY COMPATIBILITY MATCHING ENGINE -->
+    <div class="card-custom mb-4 p-4 rounded-3 shadow-sm border-pink" style="background-color: #FFF7FA;">
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3 flex-wrap gap-2">
+            <div>
+                <span class="badge bg-pink text-dark px-3 py-1 fs-6 mb-1"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>AI COMPATIBILITY MATCHING</span>
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-network-wired text-pink me-2"></i>AI-Assisted Compatibility Match Suggestions</h5>
+            </div>
+        </div>
+
+        {% if ai_suggested_matches %}
+            <div class="row g-3">
+                {% for match in ai_suggested_matches[:6] %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 bg-white border border-pink rounded-3 shadow-sm h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-success text-white px-2 py-1 fs-6 fw-bold">
+                                        <i class="fa-solid fa-bolt me-1"></i>{{ match.score }}% COMPATIBILITY
+                                    </span>
+                                    <span class="small font-monospace text-muted">{{ match.request.request_id }}</span>
+                                </div>
+                                <div class="border-bottom pb-2 mb-2">
+                                    <div class="fw-bold text-dark"><i class="fa-solid fa-user-heart text-pink me-1"></i>Adopter: {{ match.adopter.name or 'Adopter' }}</div>
+                                    <div class="small text-muted">{{ match.adopter.email }}</div>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="fw-bold text-dark"><i class="fa-solid fa-baby text-pink me-1"></i>Child: {{ match.child.child_name }} ({{ match.child.child_id }})</div>
+                                    <div class="small text-muted">Age: {{ match.child.age_range }} | Gender: {{ match.child.gender }}</div>
+                                </div>
+                                <div class="small bg-light p-2 rounded mb-3">
+                                    <strong class="text-pink d-block mb-1">AI Compatibility Factors:</strong>
+                                    {% for r in match.reasons %}
+                                        <span class="badge bg-white text-dark border me-1 mb-1"><i class="fa-solid fa-check text-success me-1"></i>{{ r }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <form action="{{ url_for('trust.authorize_match') }}" method="POST">
+                                <input type="hidden" name="child_id" value="{{ match.child._id or match.child.child_id }}">
+                                <input type="hidden" name="request_id" value="{{ match.request.request_id }}">
+                                <input type="hidden" name="adopter_id" value="{{ match.request.adopter_id }}">
+                                <input type="hidden" name="compatibility_score" value="{{ match.score }}%">
+                                <button type="submit" class="btn btn-pink btn-sm w-100 fw-bold py-2">
+                                    <i class="fa-solid fa-circle-check me-1"></i> AUTHORIZE & COMPLETE MATCH
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-robot fs-2 mb-2 d-block text-pink opacity-50"></i>
+                No active compatibility match suggestions available at this moment.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- SECTION 4: COMPLETED CHILD-FAMILY MATCHES -->
+    {% if completed_matches %}
+    <div class="card-custom mb-4 p-4 bg-white rounded-3 shadow-sm">
+        <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-award text-pink me-2"></i>Completed Child-Family Matches</h5>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
+                        <th>Match ID</th>
                         <th>Request ID</th>
-                        <th>Applicant Name</th>
-                        <th>Current Status</th>
-                        <th>Journey Stage</th>
-                        <th>Update Status</th>
+                        <th>Compatibility Score</th>
+                        <th>Date Matched</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for app_req in applications %}
+                    {% for m in completed_matches %}
                         <tr>
-                            <td class="fw-bold text-dark">{{ app_req.request_id }}</td>
-                            <td>
-                                <div class="fw-bold">{{ app_req.adopter.name if app_req.adopter else 'Adopter' }}</div>
-                                <div class="small text-muted"><code>{{ app_req.adopter.email if app_req.adopter else '' }}</code></div>
-                            </td>
-                            <td>
-                                <span class="badge {% if app_req.status == 'APPROVED' %}badge-approved{% elif app_req.status == 'COMPLETED' %}badge-approved{% elif app_req.status == 'FURTHER_PROCESS' %}badge-pink{% else %}badge-review{% endif %}">
-                                    {{ app_req.status }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="fw-bold text-pink small">
-                                    {{ app_req.journey.current_stage if app_req.journey else app_req.status }}
-                                </span>
-                            </td>
-                            <td>
-                                <form action="{{ url_for('trust.request_action', req_id=app_req._id) }}" method="POST" class="d-flex gap-2 align-items-center">
-                                    <input type="hidden" name="action" value="status_update">
-                                    <select name="new_status" class="form-select form-select-sm" style="width: 170px;">
-                                        <option value="TRUST_REVIEW" {% if app_req.status == 'TRUST_REVIEW' %}selected{% endif %}>Under Review</option>
-                                        <option value="APPROVED" {% if app_req.status == 'APPROVED' %}selected{% endif %}>Approved</option>
-                                        <option value="FURTHER_PROCESS" {% if app_req.status == 'FURTHER_PROCESS' %}selected{% endif %}>Further Process</option>
-                                        <option value="COMPLETED" {% if app_req.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-pink">
-                                        <i class="fa-solid fa-arrows-rotate"></i> Update
-                                    </button>
-                                </form>
-                            </td>
+                            <td class="fw-bold text-dark font-monospace">{{ m.match_id }}</td>
+                            <td class="font-monospace">{{ m.request_id }}</td>
+                            <td><span class="badge bg-success text-white px-2 py-1">{{ m.compatibility_score }}</span></td>
+                            <td class="small text-muted">{{ m.matched_at[:10] if m.matched_at else 'Recently' }}</td>
+                            <td><span class="badge bg-dark text-white px-3 py-1"><i class="fa-solid fa-circle-check me-1"></i>MATCH COMPLETED</span></td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    {% else %}
-        <p class="text-muted py-4 text-center mb-0">No active applications to manage.</p>
+    </div>
     {% endif %}
+
 </div>
 {% endblock %}

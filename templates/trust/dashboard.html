@@ -4,135 +4,146 @@
 {% block header_title %}Trust Portal Dashboard{% endblock %}
 
 {% block content %}
-<!-- Top Verification Badge Banner -->
-<div class="alert bg-very-light-pink border-light-pink mb-4 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <div>
-        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building-shield text-pink me-2"></i>{{ trust.trust_name if trust else user.name }}</h5>
-        <span class="small text-muted">Location: {{ trust.location if trust else 'Not Set' }} • Phone: {{ trust.phone if trust else 'N/A' }}</span>
+<div class="container-fluid px-0">
+
+    <!-- Top Verification Badge Banner -->
+    <div class="alert bg-white border border-pink shadow-sm mb-4 p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 rounded-3">
+        <div>
+            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building-shield text-pink me-2"></i>{{ trust.trust_name if trust else user.name }}</h5>
+            <span class="small text-muted"><i class="fa-solid fa-location-dot text-pink me-1"></i>Location: <strong>{{ trust.city or trust.district or trust.location if trust else 'Madurai, Tamil Nadu' }}, {{ trust.state if trust else 'India' }}</strong> • Phone: <strong>{{ trust.phone if trust else '+91 9443123456' }}</strong></span>
+        </div>
+        <div>
+            {% if trust and trust.verified %}
+                <span class="badge bg-success text-white fs-6 p-2"><i class="fa-solid fa-circle-check me-1"></i>Verified & Active SAA</span>
+            {% else %}
+                <span class="badge bg-warning text-dark fs-6 p-2"><i class="fa-solid fa-clock me-1"></i>Verification Pending</span>
+            {% endif %}
+        </div>
     </div>
-    <div>
-        {% if trust and trust.verified %}
-            <span class="badge badge-approved fs-6"><i class="fa-solid fa-circle-check me-1"></i>Verified Trust</span>
+
+    <!-- Metric Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card-custom card-pink-accent h-100 bg-white p-3 rounded-3 shadow-sm border">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">New Requests</div>
+                        <div class="fs-2 fw-bold text-dark">{{ total_new }}</div>
+                    </div>
+                    <div class="card-icon bg-light text-pink p-3 rounded-circle fs-3">
+                        <i class="fa-solid fa-inbox"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2"><i class="fa-solid fa-clock text-warning me-1"></i>Awaiting initial review</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card-custom card-pink-accent h-100 bg-white p-3 rounded-3 shadow-sm border">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Pending Review</div>
+                        <div class="fs-2 fw-bold text-dark">{{ pending_review }}</div>
+                    </div>
+                    <div class="card-icon bg-light text-pink p-3 rounded-circle fs-3">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2"><i class="fa-solid fa-user-check text-info me-1"></i>Under active review</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card-custom card-pink-accent h-100 bg-white p-3 rounded-3 shadow-sm border">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Approved Families</div>
+                        <div class="fs-2 fw-bold text-success">{{ approved_count }}</div>
+                    </div>
+                    <div class="card-icon bg-light text-success p-3 rounded-circle fs-3">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2"><i class="fa-solid fa-paper-plane text-success me-1"></i>Approved for matching</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card-custom card-pink-accent h-100 bg-white p-3 rounded-3 shadow-sm border">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Available Children</div>
+                        <div class="fs-2 fw-bold text-pink">{{ available_children_count }}</div>
+                    </div>
+                    <div class="card-icon bg-light text-pink p-3 rounded-circle fs-3">
+                        <i class="fa-solid fa-child-reaching"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2"><i class="fa-solid fa-wand-magic-sparkles text-pink me-1"></i>Ready for AI matching</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Adopter Requests Table -->
+    <div class="card-custom mb-4 bg-white p-4 rounded-3 shadow-sm border">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-list text-pink me-2"></i>Incoming Adopter Requests</h5>
+            <a href="{{ url_for('trust.applications') }}" class="btn btn-sm btn-pink fw-bold">
+                <i class="fa-solid fa-arrow-right me-1"></i> View All & Match
+            </a>
+        </div>
+
+        {% if recent_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Applicant Name</th>
+                            <th>Email Address</th>
+                            <th>Status</th>
+                            <th>Date Updated</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in recent_requests %}
+                            <tr>
+                                <td class="fw-bold text-dark font-monospace">{{ req.request_id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ req.adopter.name if req.adopter else req.applicant_name or 'Adopter' }}</div>
+                                </td>
+                                <td><code>{{ req.adopter.email if req.adopter else req.applicant_email or '' }}</code></td>
+                                <td>
+                                    {% set st = req.status or 'SUBMITTED' %}
+                                    {% if st == 'APPROVED' %}
+                                        <span class="badge bg-success text-white px-3 py-1">APPROVED</span>
+                                    {% elif st in ['TRUST_REVIEW', 'UNDER_REVIEW'] %}
+                                        <span class="badge bg-warning text-dark px-3 py-1">UNDER REVIEW</span>
+                                    {% elif st == 'COMPLETED' %}
+                                        <span class="badge bg-dark text-white px-3 py-1">COMPLETED</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary text-white px-3 py-1">{{ st }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ req.updated_at[:10] if req.updated_at else 'Recently' }}</td>
+                                <td>
+                                    <a href="{{ url_for('trust.applications') }}" class="btn btn-sm btn-outline-pink fw-bold">
+                                        Manage & Match
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         {% else %}
-            <span class="badge badge-pending fs-6"><i class="fa-solid fa-clock me-1"></i>Verification Pending</span>
+            <div class="text-center py-4 text-muted">
+                <i class="fa-solid fa-inbox fs-2 mb-2 d-block text-pink opacity-50"></i>
+                No adopter requests received yet.
+            </div>
         {% endif %}
     </div>
-</div>
 
-<!-- Metric Summary Cards -->
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-xl-3">
-        <div class="card-custom card-pink-accent h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="metric-label">New Requests</div>
-                    <div class="metric-value">{{ total_new }}</div>
-                </div>
-                <div class="card-icon">
-                    <i class="fa-solid fa-inbox"></i>
-                </div>
-            </div>
-            <div class="small text-muted mt-3">Awaiting initial review</div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <div class="card-custom card-pink-accent h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="metric-label">Pending Review</div>
-                    <div class="metric-value">{{ pending_review }}</div>
-                </div>
-                <div class="card-icon">
-                    <i class="fa-solid fa-clock-rotate-left"></i>
-                </div>
-            </div>
-            <div class="small text-muted mt-3">Under active review</div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <div class="card-custom card-pink-accent h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="metric-label">Approved</div>
-                    <div class="metric-value text-success">{{ approved_count }}</div>
-                </div>
-                <div class="card-icon bg-light text-success">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-            </div>
-            <div class="small text-muted mt-3">Approval emails sent</div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-xl-3">
-        <div class="card-custom card-pink-accent h-100">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="metric-label">Active Applications</div>
-                    <div class="metric-value">{{ active_count }}</div>
-                </div>
-                <div class="card-icon">
-                    <i class="fa-solid fa-bars-progress"></i>
-                </div>
-            </div>
-            <div class="small text-muted mt-3">Active journey stages</div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Adopter Requests -->
-<div class="card-custom mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-clipboard-list text-pink me-2"></i>Incoming Adopter Requests</h5>
-        <a href="{{ url_for('trust.requests_list') }}" class="btn btn-sm btn-pink">View All Requests</a>
-    </div>
-
-    {% if recent_requests %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Request ID</th>
-                        <th>Applicant Name</th>
-                        <th>Email Address</th>
-                        <th>Status</th>
-                        <th>Submitted Date</th>
-                        <th class="text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in recent_requests %}
-                        <tr>
-                            <td class="fw-bold text-dark">{{ req.request_id }}</td>
-                            <td>{{ req.adopter.name if req.adopter else 'Adopter' }}</td>
-                            <td><code>{{ req.adopter.email if req.adopter else 'N/A' }}</code></td>
-                            <td>
-                                <span class="badge {% if req.status == 'APPROVED' %}badge-approved{% elif req.status == 'TRUST_REVIEW' %}badge-review{% else %}badge-pending{% endif %}">
-                                    {{ req.status }}
-                                </span>
-                            </td>
-                            <td class="text-muted small">{{ req.created_at[:10] if req.created_at else 'N/A' }}</td>
-                            <td class="text-end">
-                                {% if req.status != 'APPROVED' %}
-                                    <form action="{{ url_for('trust.request_action', req_id=req._id) }}" method="POST" class="d-inline">
-                                        <input type="hidden" name="action" value="approve">
-                                        <button type="submit" class="btn btn-sm btn-pink">
-                                            <i class="fa-solid fa-check me-1"></i> Approve
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-success small fw-bold"><i class="fa-solid fa-envelope-circle-check me-1"></i> Approved & Emailed</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="text-muted py-3 mb-0 text-center">No incoming adopter requests yet.</p>
-    {% endif %}
 </div>
 {% endblock %}
