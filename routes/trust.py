@@ -1,4 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+"""
+Trust Routes (Trust Agency Portal - 4 Main Pages)
+Handles trust dashboard, applications review, child-family matching, profile editing, and notifications.
+"""
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from database.mongodb import db
@@ -9,6 +13,7 @@ from services.email_service import send_application_status_update_email, send_ma
 
 trust_bp = Blueprint('trust', __name__, url_prefix='/trust')
 
+# Helper function to get trust document for logged-in user
 def _get_trust_doc(user):
     user_id = str(user['_id'])
     trust = db.trusts.find_one({'user_id': user_id})
@@ -18,6 +23,7 @@ def _get_trust_doc(user):
         trust = db.trusts.find_one({'trust_name': user.get('name')})
     return trust
 
+# Helper function to build trust_id query
 def _get_trust_id_query(trust_id_str):
     if not trust_id_str:
         return None
@@ -26,9 +32,14 @@ def _get_trust_id_query(trust_id_str):
     except Exception:
         return trust_id_str
 
+
+# ----------------------------------------------------
+# TRUST PAGE 1: Dashboard
+# ----------------------------------------------------
 @trust_bp.route('/dashboard')
 @trust_required
 def dashboard():
+    """Trust Dashboard displaying status metrics, child profile counts, and recent requests."""
     user = get_current_user()
     user_id = str(user['_id'])
     trust = _get_trust_doc(user)
@@ -37,6 +48,7 @@ def dashboard():
     if trust_id:
         t_query = _get_trust_id_query(trust_id)
         
+        # Calculate metric statistics
         total_new = db.adoption_requests.count_documents({'trust_id': t_query, 'status': {'$in': ['SUBMITTED', 'REQUEST_SENT', 'NEW']}})
         pending_review = db.adoption_requests.count_documents({'trust_id': t_query, 'status': {'$in': ['TRUST_REVIEW', 'UNDER_REVIEW']}})
         approved_count = db.adoption_requests.count_documents({'trust_id': t_query, 'status': 'APPROVED'})
@@ -48,20 +60,15 @@ def dashboard():
 
         recent_requests = list(db.adoption_requests.find({'trust_id': t_query}).sort('updated_at', -1).limit(5))
     else:
-        total_new = 0
-        pending_review = 0
-        approved_count = 0
-        active_count = 0
-        completed_count = 0
-        available_children_count = 0
-        completed_matches_count = 0
+        total_new = pending_review = approved_count = active_count = completed_count = 0
+        available_children_count = completed_matches_count = 0
         recent_requests = []
 
-    # Join adopter details for recent requests
+    # Join adopter user details for table rendering
     for req in recent_requests:
         req['_id'] = str(req['_id'])
-        adopter = None
         adopter_id = req.get('adopter_id')
+        adopter = None
         if adopter_id:
             try:
                 adopter = db.users.find_one({'_id': ObjectId(adopter_id)})
@@ -88,10 +95,14 @@ def dashboard():
         unread_count=unread_count
     )
 
+
+# ----------------------------------------------------
+# TRUST PAGE 2: Applications & Child Compatibility Matching
+# ----------------------------------------------------
 @trust_bp.route('/applications')
 @trust_required
 def applications():
-    """Trust Page 2: Applications & Child-Family Compatibility Matching System."""
+    """Trust Page 2: Applications review and AI-assisted child-family matching."""
     user = get_current_user()
     user_id = str(user['_id'])
     trust = _get_trust_doc(user)
@@ -105,11 +116,12 @@ def applications():
     if trust_id:
         t_query = _get_trust_id_query(trust_id)
 
+        # Step 1: Fetch adoption requests submitted to this trust only
         applications_cursor = list(db.adoption_requests.find({'trust_id': t_query}).sort('updated_at', -1))
         for req in applications_cursor:
             req['_id'] = str(req['_id'])
-            adopter = None
             adopter_id = req.get('adopter_id')
+            adopter = None
             if adopter_id:
                 try:
                     adopter = db.users.find_one({'_id': ObjectId(adopter_id)})
@@ -124,17 +136,17 @@ def applications():
             req['journey'] = journey
             applications_list.append(req)
 
-        # Available Children Profiles
+        # Step 2: Fetch available child profiles for this trust
         available_children = list(db.child_profiles.find({'trust_id': t_query, 'status': 'AVAILABLE'}).sort('created_at', -1))
         for ch in available_children:
             ch['_id'] = str(ch['_id'])
 
-        # Completed Matches
+        # Step 3: Fetch authorized completed matches
         completed_matches = list(db.child_matches.find({'trust_id': t_query}).sort('matched_at', -1))
         for m in completed_matches:
             m['_id'] = str(m['_id'])
 
-        # AI-Assisted Compatibility Match Suggestions
+        # Step 4: AI-Assisted Compatibility Match Calculation
         approved_adopters = [a for a in applications_list if a.get('status') in ['APPROVED', 'FURTHER_PROCESS', 'TRUST_REVIEW', 'UNDER_REVIEW', 'SUBMITTED']]
         for child in available_children:
             for req in approved_adopters:
@@ -142,7 +154,6 @@ def applications():
                 app_det = req.get('application_details') or {}
                 pref = adopter.get('preferences') or {}
 
-                # Calculate AI Match Score
                 score = 75
                 reasons = []
 
@@ -183,14 +194,15 @@ def applications():
         unread_count=unread_count
     )
 
+
 @trust_bp.route('/request/action/<req_id>', methods=['POST'])
 @trust_required
 def request_action(req_id):
+    """Updates status and remarks for an adoption application."""
     user = get_current_user()
     trust = _get_trust_doc(user)
-    trust_id = session.get('trust_id') or (str(trust['_id']) if trust else None)
-    
-    action = request.form.get('action', '').lower() # approve / reject / status_update
+
+    action = request.form.get('action', '').lower()
     new_status = request.form.get('new_status', 'APPROVED')
     remarks = request.form.get('remarks', '').strip()
 
@@ -205,30 +217,26 @@ def request_action(req_id):
 
     adopter_id = req.get('adopter_id')
     adopter = None
-    try:
-        adopter = db.users.find_one({'_id': ObjectId(adopter_id)})
-    except Exception:
-        adopter = db.users.find_one({'_id': adopter_id})
+    if adopter_id:
+        try:
+            adopter = db.users.find_one({'_id': ObjectId(adopter_id)})
+        except Exception:
+            adopter = db.users.find_one({'_id': adopter_id})
 
     adopter_email = adopter.get('email', '') if adopter else ''
     trust_name = trust.get('trust_name', 'Adoption Trust') if trust else 'Adoption Trust'
 
     if action == 'approve':
         status_to_set = 'APPROVED'
-        stage_to_set = 'APPROVED'
     elif action == 'reject':
         status_to_set = 'REJECTED'
-        stage_to_set = 'REJECTED'
     else:
         status_to_set = new_status
-        stage_to_set = new_status
 
     now_iso = datetime.now(timezone.utc).isoformat()
     update_dict = {'status': status_to_set, 'updated_at': now_iso}
     if remarks:
         update_dict['remarks'] = remarks
-    if status_to_set == 'APPROVED':
-        update_dict['approved_at'] = now_iso
 
     db.adoption_requests.update_one({'_id': req['_id']}, {'$set': update_dict})
 
@@ -242,32 +250,19 @@ def request_action(req_id):
         applicant_email = adopter_email
         application_id = req.get('request_id', 'APP-2026-00001')
 
-    # Update journey timeline stage
-    journey_update = {
-        'current_stage': stage_to_set,
-        'updated_at': now_iso
-    }
-    if status_to_set == 'APPROVED':
-        journey_update['approved'] = True
-    elif status_to_set == 'FURTHER_PROCESS':
-        journey_update['further_process'] = True
-    elif status_to_set == 'COMPLETED':
-        journey_update['completed'] = True
-
+    # Update journey stage
+    journey_update = {'current_stage': status_to_set, 'updated_at': now_iso}
     db.journeys.update_one({'request_id': req.get('request_id')}, {'$set': journey_update})
 
-    # Create in-app notification for adopter and trust
-    notif_msg = f"Application ({application_id}) status updated to '{status_to_set}' by {trust_name}."
-    create_notification(adopter_id, notif_msg, notif_type='status_update')
+    # Create notifications and send SMTP email
+    create_notification(adopter_id, f"Application ({application_id}) status updated to '{status_to_set}' by {trust_name}.", notif_type='status_update')
     create_notification(str(user['_id']), f"Status for request {application_id} updated to {status_to_set}.", notif_type='status_update')
 
-    # Send SMTP Email Confirmation
-    email_sent, feedback = send_application_status_update_email(
-        applicant_email, application_id, trust_name, status_to_set, user_id=adopter_id
-    )
+    send_application_status_update_email(applicant_email, application_id, trust_name, status_to_set, user_id=adopter_id)
     flash(f"Status updated to '{status_to_set}'. Notification & email sent to {applicant_email}.", 'success')
 
     return redirect(url_for('trust.applications'))
+
 
 @trust_bp.route('/authorize-match', methods=['POST'])
 @trust_required
@@ -284,7 +279,7 @@ def authorize_match():
     compatibility_score = request.form.get('compatibility_score', '95%')
 
     if not child_id or not request_id or not adopter_id:
-        flash('Missing required child or adopter details for matching.', 'danger')
+        flash('Missing child or adopter details for matching.', 'danger')
         return redirect(url_for('trust.applications'))
 
     now_iso = datetime.now(timezone.utc).isoformat()
@@ -300,40 +295,42 @@ def authorize_match():
     }
     db.child_matches.insert_one(match_doc)
 
-    # Update child profile status
+    # Update child profile status to MATCHED
     try:
         db.child_profiles.update_one({'_id': ObjectId(child_id)}, {'$set': {'status': 'MATCHED', 'available_for_matching': False, 'updated_at': now_iso}})
     except Exception:
         db.child_profiles.update_one({'child_id': child_id}, {'$set': {'status': 'MATCHED', 'available_for_matching': False, 'updated_at': now_iso}})
 
-    # Update adoption request & application status
+    # Update application & journey status to COMPLETED
     db.adoption_requests.update_one({'request_id': request_id}, {'$set': {'status': 'COMPLETED', 'updated_at': now_iso}})
     db.adoption_applications.update_one({'application_id': request_id}, {'$set': {'status': 'COMPLETED', 'updated_at': now_iso}})
     db.journeys.update_one({'request_id': request_id}, {'$set': {'current_stage': 'COMPLETED', 'completed': True, 'updated_at': now_iso}})
 
-    # Create notifications
-    adopter_msg = f"Congratulations! Your child-family match for request {request_id} has been authorized and completed by {trust.get('trust_name')}."
-    create_notification(adopter_id, adopter_msg, notif_type='match_completed')
+    # Create notifications and send email
+    create_notification(adopter_id, f"Child-family match for request {request_id} has been authorized and completed.", notif_type='match_completed')
     create_notification(user_id, f"Child match authorized and completed for request {request_id}.", notif_type='match_completed')
 
-    # Send Email
     adopter_doc = db.users.find_one({'_id': ObjectId(adopter_id)}) if ObjectId.is_valid(adopter_id) else db.users.find_one({'_id': adopter_id})
-    adopter_email = adopter_doc.get('email', '') if adopter_doc else ''
-    if adopter_email:
-        send_matching_completed_email(adopter_email, request_id, trust.get('trust_name', 'Adoption Trust'), user_id=adopter_id)
+    if adopter_doc and adopter_doc.get('email'):
+        send_matching_completed_email(adopter_doc['email'], request_id, trust.get('trust_name', 'Adoption Trust'), user_id=adopter_id)
 
-    flash(f"Child-family match for request {request_id} successfully authorized and completed!", 'success')
+    flash(f"Child-family match for request {request_id} authorized successfully!", 'success')
     return redirect(url_for('trust.applications'))
+
 
 @trust_bp.route('/requests')
 @trust_required
 def requests_list():
-    """Alias route redirecting to applications & matching."""
     return applications()
 
+
+# ----------------------------------------------------
+# TRUST PAGE 3: Trust Profile Management
+# ----------------------------------------------------
 @trust_bp.route('/profile', methods=['GET', 'POST'])
 @trust_required
 def profile():
+    """Trust Agency Profile Editor."""
     user = get_current_user()
     user_id = str(user['_id'])
     trust = _get_trust_doc(user)
@@ -345,10 +342,8 @@ def profile():
         location = request.form.get('location', '').strip()
         city = request.form.get('city', '').strip()
         state = request.form.get('state', '').strip()
-        district = request.form.get('district', '').strip()
         description = request.form.get('description', '').strip()
         website = request.form.get('website', '').strip()
-        agency_type = request.form.get('agency_type', 'Specialized Adoption Agency (SAA)')
         languages_str = request.form.get('languages', 'English, Tamil')
         new_password = request.form.get('new_password', '').strip()
 
@@ -361,10 +356,8 @@ def profile():
             'location': location or f"{city}, {state}",
             'city': city,
             'state': state,
-            'district': district,
             'description': description,
             'website': website,
-            'agency_type': agency_type,
             'languages': languages_list,
             'updated_at': datetime.now(timezone.utc).isoformat()
         }
@@ -394,9 +387,14 @@ def profile():
     unread_count = get_unread_count(user_id)
     return render_template('trust/profile.html', user=user, trust=trust, notifications=notifications, unread_count=unread_count)
 
+
+# ----------------------------------------------------
+# TRUST PAGE 4: Notifications
+# ----------------------------------------------------
 @trust_bp.route('/notifications', methods=['GET', 'POST'])
 @trust_required
 def notifications_page():
+    """Trust Notifications Management."""
     user = get_current_user()
     user_id = str(user['_id'])
 
@@ -414,10 +412,7 @@ def notifications_page():
 
     filter_type = request.args.get('filter', 'all')
     all_notifications = get_user_notifications(user_id, limit=50)
-    if filter_type == 'unread':
-        notifications_list = [n for n in all_notifications if not n.get('is_read')]
-    else:
-        notifications_list = all_notifications
+    notifications_list = [n for n in all_notifications if not n.get('is_read')] if filter_type == 'unread' else all_notifications
 
     unread_count = get_unread_count(user_id)
     return render_template(

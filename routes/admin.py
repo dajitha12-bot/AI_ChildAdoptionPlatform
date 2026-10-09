@@ -1,4 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, Response, jsonify
+"""
+Admin Routes (System Administrator Portal - 4 Main Pages)
+Handles admin dashboard, trust management, platform health monitoring, and system notifications.
+"""
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, Response
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from database.mongodb import db
@@ -9,12 +13,18 @@ from services.agency_service import get_freshness_status, import_agencies_from_c
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
+
+# ----------------------------------------------------
+# ADMIN PAGE 1: Dashboard
+# ----------------------------------------------------
 @admin_bp.route('/dashboard')
 @admin_required
 def dashboard():
+    """Admin Dashboard showing high-level platform stats."""
     user = get_current_user()
     user_id = str(user['_id'])
 
+    # Count platform metrics
     total_adopters = db.users.count_documents({'role': 'adopter'})
     total_trusts = db.trusts.count_documents({})
     verified_trusts_count = db.trusts.count_documents({'verified': True})
@@ -29,11 +39,13 @@ def dashboard():
 
     for r in recent_requests:
         r['_id'] = str(r['_id'])
+        adopter_id = r.get('adopter_id')
         adopter = None
-        try:
-            adopter = db.users.find_one({'_id': ObjectId(r['adopter_id'])})
-        except Exception:
-            adopter = db.users.find_one({'_id': r['adopter_id']})
+        if adopter_id:
+            try:
+                adopter = db.users.find_one({'_id': ObjectId(adopter_id)})
+            except Exception:
+                adopter = db.users.find_one({'_id': adopter_id})
         r['adopter'] = adopter
 
     notifications = get_user_notifications(user_id, limit=5)
@@ -55,16 +67,19 @@ def dashboard():
         unread_count=unread_count
     )
 
+
+# ----------------------------------------------------
+# ADMIN PAGE 2: Trust Directory Management
+# ----------------------------------------------------
 @admin_bp.route('/trust-data-management')
 @admin_required
 def trust_data_management():
-    """Main India-Wide Trust Data Management page for Admin."""
+    """Admin Page 2: Manage adoption agency dataset."""
     user = get_current_user()
     user_id = str(user['_id'])
 
     all_agencies = list(db.trusts.find().sort('trust_name', 1))
 
-    # Metric counts & freshness calculations
     total_agencies = len(all_agencies)
     verified_agencies = 0
     pending_verification = 0
@@ -103,300 +118,115 @@ def trust_data_management():
         unread_count=unread_count
     )
 
+
+@admin_bp.route('/trusts')
+@admin_required
+def trusts_alias():
+    return trust_data_management()
+
+
 @admin_bp.route('/trust/add', methods=['POST'])
 @admin_required
-def add_agency():
-    """Add a new adoption agency (Admin action)."""
+def add_trust():
+    """Adds a new adoption agency to dataset."""
     trust_name = request.form.get('trust_name', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    phone = request.form.get('phone', '').strip()
     state = request.form.get('state', '').strip()
     district = request.form.get('district', '').strip()
     city = request.form.get('city', '').strip()
-    address = request.form.get('address', '').strip()
-    phone = request.form.get('phone', '').strip()
-    email = validate_email(request.form.get('email', ''))
-    website = validate_url(request.form.get('website', ''))
-    agency_type = request.form.get('agency_type', 'Specialized Adoption Agency (SAA)').strip()
-    verification_source = request.form.get('verification_source', 'Official CARA / Government Registry').strip()
-    source_url = validate_url(request.form.get('source_url', ''))
-
+    address = request.form.get('public_address', '').strip() or request.form.get('address', '').strip()
+    website = request.form.get('website', '').strip()
+    agency_type = request.form.get('agency_type', 'Specialized Adoption Agency (SAA)')
+    verification_source = request.form.get('verification_source', 'Central Adoption Resource Authority (CARA)')
+    source_url = request.form.get('source_url', '').strip()
     languages_str = request.form.get('languages', 'English, Tamil')
-    languages = [l.strip() for l in languages_str.split(',') if l.strip()]
 
-    mark_verified = request.form.get('mark_verified') == 'on'
+    if not trust_name or not email:
+        flash('Trust Name and Email are required.', 'danger')
+        return redirect(url_for('admin.trust_data_management'))
+
     now_iso = datetime.now(timezone.utc).isoformat()
+    languages_list = [l.strip() for l in languages_str.split(',') if l.strip()]
 
-    agency_doc = {
+    trust_doc = {
         'trust_name': trust_name,
+        'email': email,
+        'phone': phone,
         'state': state,
         'district': district,
         'city': city,
+        'public_address': address,
         'address': address,
-        'location': f"{city}, {state}" if city else state,
-        'phone': phone,
-        'email': email,
+        'location': f"{city}, {state}",
         'website': website,
-        'languages': languages,
         'agency_type': agency_type,
-        'verified': mark_verified,
+        'languages': languages_list,
         'verification_source': verification_source,
         'source_url': source_url,
-        'last_verified': now_iso if mark_verified else None,
-        'status': 'ACTIVE' if mark_verified else 'PENDING_REVIEW',
-        'description': f"Official {agency_type} operating in {city}, {state}.",
+        'verified': True,
+        'status': 'ACTIVE',
+        'last_verified': now_iso,
         'created_at': now_iso,
         'updated_at': now_iso
     }
 
-    db.trusts.insert_one(agency_doc)
-    flash(f"✓ Agency '{trust_name}' added successfully. Status: {'ACTIVE (Verified)' if mark_verified else 'PENDING_REVIEW'}.", 'success')
-    return redirect(url_for('admin.trust_data_management'))
-
-@admin_bp.route('/trust/update/<agency_id>', methods=['POST'])
-@admin_required
-def update_agency(agency_id):
-    """Update existing agency details."""
-    try:
-        agency = db.trusts.find_one({'_id': ObjectId(agency_id)})
-    except Exception:
-        agency = db.trusts.find_one({'_id': agency_id})
-
-    if not agency:
-        flash('Agency record not found.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    trust_name = request.form.get('trust_name', '').strip()
-    state = request.form.get('state', '').strip()
-    district = request.form.get('district', '').strip()
-    city = request.form.get('city', '').strip()
-    address = request.form.get('address', '').strip()
-    phone = request.form.get('phone', '').strip()
-    email = validate_email(request.form.get('email', ''))
-    website = validate_url(request.form.get('website', ''))
-    agency_type = request.form.get('agency_type', 'Specialized Adoption Agency (SAA)').strip()
-    verification_source = request.form.get('verification_source', '').strip()
-    source_url = validate_url(request.form.get('source_url', ''))
-
-    languages_str = request.form.get('languages', 'English, Tamil')
-    languages = [l.strip() for l in languages_str.split(',') if l.strip()]
-
-    update_dict = {
-        'trust_name': trust_name,
-        'state': state,
-        'district': district,
-        'city': city,
-        'address': address,
-        'location': f"{city}, {state}" if city else state,
-        'phone': phone,
+    # Create associated user account for trust login
+    user_doc = {
+        'name': trust_name,
         'email': email,
-        'website': website,
-        'languages': languages,
-        'agency_type': agency_type,
-        'verification_source': verification_source,
-        'source_url': source_url,
-        'updated_at': datetime.now(timezone.utc).isoformat()
+        'password_hash': hash_password('Trust@123'),
+        'role': 'trust',
+        'phone': phone,
+        'address': f"{city}, {state}",
+        'language': 'English',
+        'created_at': now_iso,
+        'updated_at': now_iso
     }
+    user_id = db.users.insert_one(user_doc).inserted_id
+    trust_doc['user_id'] = str(user_id)
 
-    db.trusts.update_one({'_id': agency['_id']}, {'$set': update_dict})
-    flash(f"Agency '{trust_name}' updated successfully.", 'success')
+    db.trusts.insert_one(trust_doc)
+    flash(f'Trust "{trust_name}" added successfully with password Trust@123!', 'success')
     return redirect(url_for('admin.trust_data_management'))
 
-@admin_bp.route('/trust/verify/<agency_id>', methods=['POST'])
+
+@admin_bp.route('/trust/verify/<trust_id>', methods=['POST'])
 @admin_required
-def verify_agency(agency_id):
-    """Marks an agency record as verified after admin inspection of official source."""
-    try:
-        agency = db.trusts.find_one({'_id': ObjectId(agency_id)})
-    except Exception:
-        agency = db.trusts.find_one({'_id': agency_id})
-
-    if not agency:
-        flash('Agency not found.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    verification_source = request.form.get('verification_source') or agency.get('verification_source') or 'Official CARA Registry'
-    source_url = request.form.get('source_url') or agency.get('source_url') or ''
+def verify_trust(trust_id):
+    """Verifies or activates a trust agency."""
+    action = request.form.get('action', 'verify')
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    db.trusts.update_one({'_id': agency['_id']}, {'$set': {
-        'verified': True,
-        'status': 'ACTIVE',
-        'verification_source': verification_source,
-        'source_url': source_url,
-        'last_verified': now_iso,
-        'updated_at': now_iso
-    }})
-
-    # If linked to a user account, notify trust user
-    if agency.get('user_id'):
-        create_notification(agency['user_id'], "Your trust agency has been verified and activated by Admin.", notif_type='trust_verified')
-
-    flash(f"✓ Agency '{agency.get('trust_name')}' marked as VERIFIED and ACTIVE.", 'success')
-    return redirect(url_for('admin.trust_data_management'))
-
-@admin_bp.route('/trust/deactivate/<agency_id>', methods=['POST'])
-@admin_required
-def deactivate_agency(agency_id):
-    """Deactivates an agency, immediately excluding it from adopter search results."""
     try:
-        agency = db.trusts.find_one({'_id': ObjectId(agency_id)})
+        t_obj_id = ObjectId(trust_id)
+        query = {'_id': t_obj_id}
     except Exception:
-        agency = db.trusts.find_one({'_id': agency_id})
+        query = {'_id': trust_id}
 
-    if not agency:
-        flash('Agency not found.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    now_iso = datetime.now(timezone.utc).isoformat()
-    db.trusts.update_one({'_id': agency['_id']}, {'$set': {
-        'status': 'INACTIVE',
-        'verified': False,
-        'updated_at': now_iso
-    }})
-
-    flash(f"Agency '{agency.get('trust_name')}' DEACTIVATED and removed from adopter search directory.", 'warning')
-    return redirect(url_for('admin.trust_data_management'))
-
-@admin_bp.route('/trust/reactivate/<agency_id>', methods=['POST'])
-@admin_required
-def reactivate_agency(agency_id):
-    """Reactivates an inactive agency."""
-    try:
-        agency = db.trusts.find_one({'_id': ObjectId(agency_id)})
-    except Exception:
-        agency = db.trusts.find_one({'_id': agency_id})
-
-    if not agency:
-        flash('Agency not found.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    now_iso = datetime.now(timezone.utc).isoformat()
-    db.trusts.update_one({'_id': agency['_id']}, {'$set': {
-        'status': 'ACTIVE',
-        'verified': True,
-        'last_verified': now_iso,
-        'updated_at': now_iso
-    }})
-
-    flash(f"✓ Agency '{agency.get('trust_name')}' REACTIVATED.", 'success')
-    return redirect(url_for('admin.trust_data_management'))
-
-@admin_bp.route('/trust/import-csv', methods=['POST'])
-@admin_required
-def import_csv():
-    """Import agency records from CSV file."""
-    if 'csv_file' not in request.files:
-        flash('No CSV file attached.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    file = request.files['csv_file']
-    if file.filename == '':
-        flash('Please select a valid CSV file.', 'danger')
-        return redirect(url_for('admin.trust_data_management'))
-
-    res = import_agencies_from_csv(file.stream)
-    if res.get('success'):
-        flash(f"✓ CSV Import Completed: {res.get('successful_count')} inserted, {res.get('skipped_count')} updated, {res.get('failed_count')} failed.", 'success')
+    if action == 'deactivate':
+        db.trusts.update_one(query, {'$set': {'status': 'INACTIVE', 'verified': False, 'updated_at': now_iso}})
+        flash('Agency deactivated.', 'warning')
     else:
-        flash(f"CSV Import Error: {res.get('error')}", 'danger')
+        db.trusts.update_one(query, {'$set': {'status': 'ACTIVE', 'verified': True, 'last_verified': now_iso, 'updated_at': now_iso}})
+        flash('Agency verified and activated successfully!', 'success')
 
     return redirect(url_for('admin.trust_data_management'))
 
-@admin_bp.route('/trust/export-csv')
-@admin_required
-def export_csv():
-    """Export agency records to CSV download."""
-    csv_data = export_agencies_to_csv()
-    filename = f"verified_adoption_agencies_export_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
-    return Response(
-        csv_data,
-        mimetype="text/csv",
-        headers={"Content-disposition": f"attachment; filename={filename}"}
-    )
 
-@admin_bp.route('/trust/download-template')
-def download_template():
-    """Download sample CSV template."""
-    template_path = os.path.join(os.path.dirname(__file__), '..', 'seed', 'agencies_template.csv')
-    if os.path.exists(template_path):
-        with open(template_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        return Response(content, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=adoption_agencies_template.csv"})
-    else:
-        sample_csv = 'agency_name,state,district,city,public_address,phone,email,website,languages,agency_type,verified,verification_source,source_url,last_verified,status\n"Example Agency","Tamil Nadu","Madurai","Madurai","Address","+91 9876543210","contact@example.org","https://example.org","Tamil, English","Specialized Adoption Agency (SAA)",true,"CARA","https://cara.wcd.gov.in","2026-09-01T00:00:00Z","ACTIVE"\n'
-        return Response(sample_csv, mimetype="text/csv", headers={"Content-disposition": "attachment; filename=adoption_agencies_template.csv"})
-
-@admin_bp.route('/profile', methods=['GET', 'POST'])
-@admin_required
-def profile():
-    user = get_current_user()
-    user_id = str(user['_id'])
-
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip().lower()
-        phone = request.form.get('phone', '').strip()
-        new_password = request.form.get('new_password', '').strip()
-
-        update_data = {
-            'name': name,
-            'email': email,
-            'phone': phone,
-            'updated_at': datetime.now(timezone.utc).isoformat()
-        }
-
-        if new_password:
-            update_data['password_hash'] = hash_password(new_password)
-
-        try:
-            db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_data})
-        except Exception:
-            db.users.update_one({'_id': user_id}, {'$set': update_data})
-
-        flash('Admin profile updated successfully!', 'success')
-        return redirect(url_for('admin.profile'))
-
-    notifications = get_user_notifications(user_id, limit=5)
-    unread_count = get_unread_count(user_id)
-    return render_template('admin/profile.html', user=user, notifications=notifications, unread_count=unread_count)
-
-@admin_bp.route('/trust-verification')
-@admin_required
-def trust_verification():
-    """Alias pointing to trust data management for compatibility."""
-    return redirect(url_for('admin.trust_data_management'))
-
-@admin_bp.route('/trust-action/<trust_id>', methods=['POST'])
-@admin_required
-def trust_action(trust_id):
-    action = request.form.get('action', '').lower()
-    if action == 'verify':
-        return verify_agency(trust_id)
-    elif action == 'suspend' or action == 'deactivate':
-        return deactivate_agency(trust_id)
-    else:
-        return deactivate_agency(trust_id)
-
+# ----------------------------------------------------
+# ADMIN PAGE 3: Platform Monitoring & Health
+# ----------------------------------------------------
 @admin_bp.route('/monitoring')
 @admin_required
 def monitoring():
+    """Admin Page 3: Live platform monitoring & email logs."""
     user = get_current_user()
     user_id = str(user['_id'])
 
-    total_users = db.users.count_documents({})
-    adopter_count = db.users.count_documents({'role': 'adopter'})
-    trust_user_count = db.users.count_documents({'role': 'trust'})
-
-    req_pending = db.adoption_requests.count_documents({'status': 'TRUST_REVIEW'})
-    req_approved = db.adoption_requests.count_documents({'status': 'APPROVED'})
-    req_completed = db.adoption_requests.count_documents({'status': 'COMPLETED'})
-    req_rejected = db.adoption_requests.count_documents({'status': 'REJECTED'})
-
-    ai_usage_count = db.ai_conversations.count_documents({})
-    email_logs_count = db.email_logs.count_documents({})
-    email_success_count = db.email_logs.count_documents({'status': {'$in': ['SENT', 'SENT_SIMULATED']}})
-
-    recent_email_logs = list(db.email_logs.find().sort('sent_at', -1).limit(10))
-    recent_ai_queries = list(db.ai_conversations.find().sort('created_at', -1).limit(10))
+    email_logs = list(db.email_logs.find().sort('sent_at', -1).limit(20))
+    for log in email_logs:
+        log['_id'] = str(log['_id'])
 
     notifications = get_user_notifications(user_id, limit=5)
     unread_count = get_unread_count(user_id)
@@ -404,27 +234,19 @@ def monitoring():
     return render_template(
         'admin/monitoring.html',
         user=user,
-        total_users=total_users,
-        adopter_count=adopter_count,
-        trust_user_count=trust_user_count,
-        req_pending=req_pending,
-        req_approved=req_approved,
-        req_completed=req_completed,
-        req_rejected=req_rejected,
-        ai_usage_count=ai_usage_count,
-        email_logs_count=email_logs_count,
-        email_success_count=email_success_count,
-        recent_email_logs=recent_email_logs,
-        recent_ai_queries=recent_ai_queries,
+        email_logs=email_logs,
         notifications=notifications,
         unread_count=unread_count
     )
 
 
+# ----------------------------------------------------
+# ADMIN PAGE 4: Admin Notifications
+# ----------------------------------------------------
 @admin_bp.route('/notifications', methods=['GET', 'POST'])
 @admin_required
 def notifications_page():
-    """Admin Notifications Page (4th Admin Main Page)."""
+    """Admin Notifications Management."""
     user = get_current_user()
     user_id = str(user['_id'])
 
@@ -442,10 +264,7 @@ def notifications_page():
 
     filter_type = request.args.get('filter', 'all')
     all_notifications = get_user_notifications(user_id, limit=50)
-    if filter_type == 'unread':
-        notifications_list = [n for n in all_notifications if not n.get('is_read')]
-    else:
-        notifications_list = all_notifications
+    notifications_list = [n for n in all_notifications if not n.get('is_read')] if filter_type == 'unread' else all_notifications
 
     unread_count = get_unread_count(user_id)
     return render_template(
@@ -455,3 +274,33 @@ def notifications_page():
         unread_count=unread_count,
         filter_type=filter_type
     )
+
+
+@admin_bp.route('/profile', methods=['GET', 'POST'])
+@admin_required
+def profile():
+    user = get_current_user()
+    user_id = str(user['_id'])
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        phone = request.form.get('phone', '').strip()
+
+        update_data = {
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }
+        try:
+            db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_data})
+        except Exception:
+            db.users.update_one({'_id': user_id}, {'$set': update_data})
+
+        flash('Admin profile updated.', 'success')
+        return redirect(url_for('admin.profile'))
+
+    notifications = get_user_notifications(user_id, limit=5)
+    unread_count = get_unread_count(user_id)
+    return render_template('admin/profile.html', user=user, notifications=notifications, unread_count=unread_count)
