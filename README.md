@@ -95,6 +95,8 @@ The platform includes **1-Click Quick Demo Login** buttons on the login page, or
 
 ## 📁 Repository Structure
 
+![Project Architecture & Directory Structure](static/img/project_structure.jpg)
+
 ```
 AI_ChildAdoptionPlatform/
 ├── app.py                      # Single monolithic Flask application (all routes, models, auth, AI & email logic)
