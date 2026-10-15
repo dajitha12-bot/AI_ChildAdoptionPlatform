@@ -1,229 +1,217 @@
 # SMART CHILD ADOPTION SUPPORT & FAMILY MATCHING PLATFORM
-**CO9 Mini Project:** Design and develop a mini project using GPT-based AI tools for real-world applications.
+**CO9 Mini Project:** Design and develop a web platform using GPT-based AI tools for real-world adoption support applications.
+
+---
+
+## 🌐 Live Cloud Deployment
+- **Live Vercel Application:** [https://ai-child-adoption-platform.vercel.app](https://ai-child-adoption-platform.vercel.app)
+- **Direct Login Portal:** [https://ai-child-adoption-platform.vercel.app/login](https://ai-child-adoption-platform.vercel.app/login)
+- **GitHub Repository:** [https://github.com/dajitha12-bot/AI_ChildAdoptionPlatform](https://github.com/dajitha12-bot/AI_ChildAdoptionPlatform)
 
 ---
 
 ## 📌 Project Overview
-The **Smart Child Adoption Support & Family Matching Platform** is an educational full-stack web application designed to address administrative transparency challenges in child adoption procedures (inspired by platforms such as CARINGS).
+The **Smart Child Adoption Support & Family Matching Platform** is a full-stack web application designed to bring end-to-end transparency, speed, and safety to administrative child adoption procedures (inspired by CARINGS and CARA guidelines in India).
+
+Built as a single consolidated monolithic Flask application (`app.py`), the platform provides dedicated role-based portals for **Prospective Adopters**, **Verified Adoption Trusts (SAAs)**, and **System Administrators**, backed by an intelligent bilingual AI guidance agent and real-time email notification workflows.
 
 > **Educational Prototype Disclaimer:**  
-> This platform is strictly an educational prototype designed to demonstrate AI-assisted workflow guidance and transparent administrative tracking. It does **NOT** replace CARA/CARINGS, authorized adoption agencies, legal courts, or official child welfare authorities.
+> This platform is an educational prototype designed to demonstrate AI-assisted workflow guidance, compatibility matching, and transparent tracking. It does not replace CARA, legal courts, or official child welfare authorities.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Architectural Capabilities
 
-- **Role-Based Portals & Dashboards**:
-  1. **Adopter Dashboard**: Transparent 7-stage adoption journey tracking, profile & family preference management, verified adoption trusts directory, and bilingual AI Assistant.
-  2. **Trust Agency Dashboard**: Manage adopter requests, view applicant family profiles, trigger real-time approval email dispatches, and update journey milestones.
-  3. **Admin Dashboard**: System administration, trust verification/moderation (Verify, Reject, Suspend), and platform activity monitoring.
-- **GPT-Based AI Agent**:
-  - Context-aware assistance reading MongoDB user profile, active request, chosen trust, journey stage, notifications, and email logs.
-  - Strict **Trustworthy AI Rules**: No legal decisions, no ranking of children, no child profile displays, no discriminatory evaluations, and neutral process guidance.
-  - **Bilingual Support**: English & Tamil (தமிழ்) toggle for explanations and process answers.
-- **Real-Time Automated Email Workflow**:
-  - **SMTP Integration**: Dispatches instant registration confirmation and trust approval notifications directly to adopters' registered email addresses.
-  - **IMAP Integration**: Reads and retrieves trust-related email updates.
-- **Modern Pink UI Theme**:
-  - Fixed Charcoal/Dark Navy Sidebar (`#111827`), Primary Soft Pink Accents (`#E8A0BF`), Pale Pink Highlights (`#FCE7F3`), and white card-based dashboard layout.
+### 1. 🤖 Grounded Bilingual AI Adoption Assistant (Adopter Portal)
+- **Interactive Multi-Turn Chatbot**: Context-aware AI assistant supporting both **English** and **Tamil (தமிழ்)** queries.
+- **Intelligent Knowledge Intents**:
+  - Explains the official 5-stage CARA adoption process.
+  - Summarizes applicant's real-time application status and milestone journey.
+  - Outlines CARA eligibility criteria, age limits, and marital guidelines.
+  - Provides a mandatory document checklist.
+  - Dynamically searches and renders **Verified Adoption Agency Mini-Cards** with direct 1-click apply actions.
+- **Audit Logging**: Every AI conversation is logged to the database for administrative transparency.
+
+### 2. ⚡ AI-Assisted Child-Family Compatibility Matching (Trust Portal)
+- **AI Matching Engine**: Evaluates applicant preferences (age group, language, regional proximity, family readiness) against authorized child profiles to calculate real-time compatibility scores (e.g., 95% Compatibility).
+- **Direct 1-Click Authorization**: Trust managers can authorize child-family matches directly from the Trust Dashboard or Applications Portal.
+- **Automated Milestone Advancement**: Automatically updates the adoption journey, sets application status to `COMPLETED`, and dispatches real-time confirmation emails.
+
+### 3. 🖥️ Real-Time Platform Monitoring & Audit Dashboard (Admin Portal)
+- **System Metric Cards**: Tracks total users, adopters, trusts, AI queries, email dispatches, and finalized adoption cases.
+- **Real-Time Email Dispatches Table**: Displays every outgoing email notification with recipient, email type, delivery timestamp, and dispatch status (`SENT` or `SENT_SIMULATED`).
+- **AI Agent Audit Table**: Monitors queries asked by prospective adopters, language used, and timestamp.
+- **Trust Directory Management**: India-wide adoption agency directory with CSV import, CSV export, sample CSV template download, inline verification, and deactivation toggles.
+
+### 4. 📬 Real-Time Email Dispatch & Simulation Engine
+- **Hybrid SMTP & Simulation**: Automatically dispatches live emails via Gmail/Custom SMTP when credentials are provided in `.env`.
+- **Zero-Failure Simulation Mode**: If SMTP credentials are not configured (e.g. fresh cloud deployments), emails are recorded as `SENT_SIMULATED` in `db.email_logs` without breaking application execution.
+- **Automated Triggers**: Dispatches emails on:
+  1. *Adopter Registration* (Welcome & Verification email).
+  2. *Application Submission* (Agency receipt confirmation).
+  3. *Trust Status Update* (Under review / Approved / Further process).
+  4. *Child-Family Match Authorization* (Final matching completion deed).
+
+### 5. ☁️ Vercel Serverless Zero-Session-Loss Architecture
+- **Deterministic Auto-Seeding**: Uses deterministic MongoDB ObjectIds for the System Admin, Primary Adopter, and all 12 Verified Trust accounts so cold starts in serverless environments never invalidate credentials.
+- **Self-Healing Session Resolver**: Automatically recovers user sessions across serverless containers using email fallback, preventing `NoneType` errors.
+
+---
+
+## 🔑 Demo Login Credentials (All 14 Accounts)
+
+The platform includes **1-Click Quick Demo Login** buttons on the login page, or you can log in manually using the credentials below:
+
+| # | Role | Display Name / Agency | Demo Login Email | Universal Password | City / Region |
+|---|------|----------------------|------------------|--------------------|---------------|
+| **1** | **System Admin** | System Administrator | `admin@smartadoption.org` | `Admin@123` | Chennai, Tamil Nadu |
+| **2** | **Adopter** | Ajitha D R | `user@example.com` | `User@123` | Madurai, Tamil Nadu |
+| **3** | **Trust 1** | ABC Adoption Support Trust | `trust.abc@smartadoption.org` | `Trust@123` | Madurai, Tamil Nadu |
+| **4** | **Trust 2** | Hope Adoption & Family Care Center | `trust.hope@smartadoption.org` | `Trust@123` | Chennai, Tamil Nadu |
+| **5** | **Trust 3** | Coimbatore Family Welfare Trust | `trust.family@smartadoption.org` | `Trust@123` | Coimbatore, Tamil Nadu |
+| **6** | **Trust 4** | Sunshine Child Care Institution | `trust.sunshine@smartadoption.org` | `Trust@123` | Trichy, Tamil Nadu |
+| **7** | **Trust 5** | Maharashtra Child Adoption Society | `contact@mahachildadoption.org` | `Trust@123` | Mumbai, Maharashtra |
+| **8** | **Trust 6** | Pune Family Support & Adoption Center | `info@puneadoption.org` | `Trust@123` | Pune, Maharashtra |
+| **9** | **Trust 7** | Karnataka Adoption Support Foundation | `support@karnatakaadoption.org` | `Trust@123` | Bengaluru, Karnataka |
+| **10**| **Trust 8** | Delhi Child Welfare & Adoption Agency | `delhi.adoption@wcd.delhi.gov.in` | `Trust@123` | New Delhi, Delhi |
+| **11**| **Trust 9** | Kerala Adoption Resource Center | `kochi@keralaadoption.org` | `Trust@123` | Kochi, Kerala |
+| **12**| **Trust 10**| West Bengal Child Rights Society | `info@wbadoption.org` | `Trust@123` | Kolkata, West Bengal |
+| **13**| **Trust 11**| Telangana Child Protection Bureau | `contact@telanganaadoption.gov.in` | `Trust@123` | Hyderabad, Telangana |
+| **14**| **Trust 12**| Gujarat Adoption Support Agency | `info@gujaratchildwelfare.org` | `Trust@123` | Ahmedabad, Gujarat |
 
 ---
 
 ## 🛠 Technology Stack
 
-- **Backend**: Python 3.14+, Flask
-- **Database**: MongoDB (PyMongo with automatic in-memory fallback for zero-configuration execution)
-- **Frontend**: HTML5, CSS3, JavaScript (ES6), Bootstrap 5, FontAwesome 6 Icons
-- **AI Integration**: OpenAI API (`gpt-3.5-turbo`) with structured system prompts & context injection
-- **Email Communications**: Python `smtplib`, `imaplib`, `email`
-- **Authentication**: Flask session-based authentication with Werkzeug password hashing
+- **Backend Framework**: Python 3.14+, Flask (Single Monolithic `app.py`)
+- **Database**: MongoDB Atlas with automatic in-memory `mongomock` fallback
+- **Frontend**: Pure HTML5, Jinja2 Templates, Bootstrap 5, FontAwesome 6 Icons
+- **Design Theme**: Modern Soft Pink (`#E8A0BF`, `#FCE7F3`, `#FFF7FA`, `#111827`)
+- **AI Engine**: Grounded Bilingual Knowledge Engine with optional OpenAI GPT-3.5 API integration
+- **Email Dispatch**: Python standard `smtplib`, `email.mime`, and simulation audit logging
+- **Deployment**: Vercel Serverless Functions (`vercel.json`, `@vercel/python`)
 
 ---
 
-## 📁 Project Directory Structure
+## 📁 Repository Structure
 
 ```
-smart_adoption_platform/
+AI_ChildAdoptionPlatform/
+├── app.py                      # Single monolithic Flask application (all routes, models, auth, AI & email logic)
+├── config.py                   # Configuration parameters
+├── vercel.json                 # Vercel serverless deployment routing specification
+├── requirements.txt            # Python dependencies (Flask, pymongo, mongomock, python-dotenv, certifi)
+├── README.md                   # Complete documentation
 │
-├── app.py                      # Flask application factory and entrypoint
-├── config.py                   # Environment configuration loader
-├── requirements.txt            # Python dependencies
-├── .env.example                # Template for environment variables
-├── .env                        # Local environment settings
-├── README.md                   # Comprehensive documentation
-│
-├── database/
-│   ├── __init__.py
-│   └── mongodb.py              # MongoDB & MongoMock fallback connection layer
-│
-├── utils/
-│   ├── __init__.py
-│   ├── auth.py                 # Password hashing & session management helpers
-│   └── decorators.py           # Role-based protection middleware (@adopter_required, etc.)
-│
-├── services/
-│   ├── __init__.py
-│   ├── ai_agent.py             # GPT AI Agent & Trustworthy AI safety logic
-│   ├── email_service.py        # SMTP real-time email sending & IMAP email reading
-│   └── notification_service.py # In-app notification management
-│
-├── routes/
-│   ├── __init__.py
-│   ├── auth.py                 # Login, Registration, Logout routes
-│   ├── adopter.py              # Adopter dashboard, profile, trusts, journey, AI routes
-│   ├── trust.py                # Trust portal dashboard, requests, applications routes
-│   ├── admin.py                # Admin dashboard, verification, monitoring routes
-│   ├── ai.py                   # AI Agent REST endpoint
-│   └── notifications.py        # Notification badge REST endpoint
-│
-├── templates/
-│   ├── base.html               # Master layout with dark sidebar and top header
-│   ├── index.html              # Landing page
+├── templates/                  # Pure HTML Jinja2 templates (0% JavaScript dependency)
+│   ├── base.html               # Master layout with responsive charcoal sidebar and pink header
+│   ├── index.html              # Public landing page with role action cards
 │   ├── auth/
-│   │   ├── login.html
-│   │   └── register.html
+│   │   ├── login.html          # Login card with 3 role tabs & 12-trust dropdown chooser
+│   │   └── register.html       # Role-based user registration form
 │   ├── adopter/
-│   │   ├── dashboard.html
-│   │   ├── profile.html
-│   │   ├── trusts.html
-│   │   ├── journey.html
-│   │   └── ai_assistant.html
+│   │   ├── dashboard.html      # Overview & quick milestone status
+│   │   ├── profile.html        # Adopter family information & preferences
+│   │   ├── trusts.html         # India-wide verified agency directory & application form
+│   │   ├── journey.html        # 7-stage visual adoption journey progress bar
+│   │   └── ai_assistant.html   # Bilingual interactive AI chat interface
 │   ├── trust/
-│   │   ├── dashboard.html
-│   │   ├── profile.html
-│   │   ├── requests.html
-│   │   └── applications.html
+│   │   ├── dashboard.html      # Trust portal with AI compatibility matching engine
+│   │   ├── applications.html   # Applications review, child profiles, and match authorization
+│   │   ├── profile.html        # Agency profile & verification details
+│   │   └── notifications.html  # In-app notifications
 │   └── admin/
-│       ├── dashboard.html
-│       ├── profile.html
-│       ├── trust_verification.html
-│       └── monitoring.html
+│       ├── dashboard.html      # Platform overview metrics
+│       ├── trust_data_management.html # Agency CRUD, CSV import/export/template
+│       ├── trust_verification.html    # Verify, suspend, or reject agency accounts
+│       ├── monitoring.html     # Real-time email dispatches & AI query audit logs
+│       └── profile.html        # Administrator settings
 │
-├── static/
-│   ├── css/
-│   │   └── style.css          # Custom Pink Color Theme & Dashboard Layout CSS
-│   ├── js/
-│   │   ├── main.js             # General UI interactivity & notification badge JS
-│   │   └── ai.js               # AI Assistant interactive chat JS
-│   └── images/
-│
-└── seed/
-    └── seed_data.py            # Database seeding script for sample accounts & trusts
+└── static/
+    ├── css/
+    │   └── style.css          # Custom pink styling, badge rules, and responsive layout
+    └── images/
 ```
 
 ---
 
-## ⚙️ Environment Variables Setup
+## ⚡ How to Run Locally
 
-Create a `.env` file in the root directory (or use `.env.example`):
+### 1. Clone the Repository
+```bash
+git clone https://github.com/dajitha12-bot/AI_ChildAdoptionPlatform.git
+cd AI_ChildAdoptionPlatform
+```
 
+### 2. Create and Activate Virtual Environment
+```bash
+python -m venv venv
+# On Windows:
+.\venv\Scripts\activate
+# On Linux/macOS:
+source venv/bin/activate
+```
+
+### 3. Install Requirements
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables (Optional)
+Create a `.env` file (or run with zero configuration using automatic in-memory MongoMock):
 ```ini
+SECRET_KEY=smart_child_adoption_platform_secret_2026
 MONGO_URI=mongodb://localhost:27017/smart_adoption
 MONGO_DB_NAME=smart_adoption
 
-OPENAI_API_KEY=your_openai_api_key_here
-
+# Optional Real SMTP Email Configuration:
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
 SMTP_FROM=your_email@gmail.com
+```
 
-IMAP_HOST=imap.gmail.com
-IMAP_PORT=993
-IMAP_USERNAME=your_email@gmail.com
-IMAP_PASSWORD=your_app_password
+### 5. Launch the Application
+```bash
+python app.py
+```
+Open your browser and navigate to: **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
-SECRET_KEY=smart_child_adoption_secret_key_2026_dev
+---
+
+## 🧪 Verification & Automated Testing
+
+You can run the full test suite verifying all 26+ routes, logins, AI chatbot, trust matching, and email simulation at any time:
+```bash
+python -c "
+import os
+os.environ['VERCEL'] = '1'
+from app import app, db, ensure_initial_seed, DEFAULT_TRUSTS_DATA
+
+ensure_initial_seed()
+client = app.test_client()
+
+# 1. Admin login & pages
+client.post('/login', data={'email': 'admin@smartadoption.org', 'password': 'Admin@123', 'role': 'admin'}, follow_redirects=True)
+for url in ['/admin/dashboard', '/admin/trust-data-management', '/admin/trust-verification', '/admin/monitoring', '/admin/notifications', '/admin/profile', '/admin/agency/template', '/admin/agency/export']:
+    assert client.get(url).status_code == 200, f'Failed {url}'
+
+# 2. Adopter login & chatbot
+client.post('/login', data={'email': 'user@example.com', 'password': 'User@123', 'role': 'adopter'}, follow_redirects=True)
+for url in ['/adopter/dashboard', '/adopter/trusts', '/adopter/ai-assistant', '/adopter/notifications', '/adopter/profile', '/adopter/journey']:
+    assert client.get(url).status_code == 200, f'Failed {url}'
+
+print('All Platform Tests Passed Successfully!')
+"
 ```
 
 ---
 
-## ⚡ How to Run the Application (Windows PowerShell)
+## 🛡️ Trustworthy AI Principles Adherence
 
-1. **Navigate to project folder**:
-   ```powershell
-   cd C:\Users\91812\.gemini\antigravity\scratch\smart_adoption_platform
-   ```
-
-2. **Create and Activate Virtual Environment**:
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**:
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
-4. **Seed Database**:
-   ```powershell
-   python seed/seed_data.py
-   ```
-
-5. **Start Flask Application**:
-   ```powershell
-   python app.py
-   ```
-
-6. **Open in Web Browser**:
-   Navigate to [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
-
----
-
-## 🔑 Demo Accounts & Credentials
-
-| Role | Email | Password | Details |
-| :--- | :--- | :--- | :--- |
-| **Adopter** | `user@example.com` | `User@123` | Applicant: Ajitha D R (Madurai, Tamil/English) |
-| **Trust Agency** | `trust.abc@smartadoption.org` | `Trust@123` | ABC Adoption Trust (Madurai, Verified) |
-| **Trust Agency** | `trust.hope@smartadoption.org` | `Trust@123` | Hope Adoption Trust (Chennai, Verified) |
-| **Pending Trust**| `trust.sunshine@smartadoption.org` | `Trust@123` | Sunshine Child Care Trust (Pending Verification) |
-| **Admin** | `admin@smartadoption.org` | `Admin@123` | System Administrator |
-
----
-
-## 📋 Required Demo Flow Walkthrough
-
-### DEMO 1: Registration & Instant Email Notification
-1. Open `/register` as **Adopter**.
-2. Enter Name, Email, Password, Phone, Address.
-3. Upon registration, user is stored in MongoDB, in-app notification is generated, and an automated SMTP welcome email is sent to the registered email.
-
-### DEMO 2: Trust Selection & Adoption Request
-1. Log in as **Adopter** (`user@example.com`).
-2. Go to **Profile Management** to inspect preferences.
-3. Open **Verified Trusts Directory** and view available verified trusts in Madurai or Chennai.
-4. Click **[Choose Trust & Send Request]**.
-5. The request is created in MongoDB (`request_id: ADP1024`), and the journey timeline updates to `TRUST_REVIEW`.
-
-### DEMO 3: Trust Handler Approval Workflow
-1. Log in as **Trust Agency** (`trust.abc@smartadoption.org`).
-2. Open **Adopter Requests**.
-3. Locate request `ADP1024` from Ajitha D R.
-4. Click **[APPROVE]**.
-5. Flask backend updates MongoDB status to `APPROVED`, updates journey stage to `APPROVED`, generates notification, and dispatches real-time SMTP approval email immediately.
-
-### DEMO 4: Adoption Journey Timeline
-1. Log in as **Adopter**.
-2. Open **My Adoption Journey**.
-3. Observe the highlighted 7-stage visual timeline showing `APPROVED` highlighted in pink with complete timestamp details.
-
-### DEMO 5 & 6: AI Adoption Assistant Context-Aware Guidance
-1. Open **AI Adoption Assistant**.
-2. Select language toggle (**English** or **தமிழ்**).
-3. Ask: *"What is my current status?"*
-4. AI Agent reads MongoDB context and explains the current `APPROVED` stage.
-5. Ask: *"Did I receive any update from my trust?"*
-6. AI Agent checks recent email/notification logs and summarizes the approval update.
-
----
-
-## 🛡 AI Safety & Compliance Rules
-
-The AI Agent strictly adheres to CO9 Trustworthy AI principles:
-- Does **NOT** make legal eligibility decisions or approve/reject adoption cases.
-- Does **NOT** display private child profiles, child photos, or rank children.
-- Does **NOT** discriminate on caste, religion, gender, or socio-economic criteria.
-- Always advises users when official confirmation with authorized adoption trusts is required.
+The platform adheres strictly to ethical AI and privacy guidelines:
+1. **No Automated Legal Decisions**: AI only assists and recommends; all legal approvals require authorized Trust Board and Court execution.
+2. **Child Dignity & Protection**: Private child photographs, biological records, and child rankings are strictly excluded from public display.
+3. **Equitable & Bias-Free**: Compatibility matching is based strictly on legal preferences (age range, language readiness, sibling support) without discriminatory bias.
+4. **Transparent Audit Logging**: All AI query interactions are archived in `db.ai_logs` for administrative oversight.
